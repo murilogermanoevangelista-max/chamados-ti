@@ -211,6 +211,8 @@ dialog{border-radius:14px}
 .aviso.nova b::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:6px}
 .aviso span,.aviso small{display:block;color:var(--muted);overflow-wrap:anywhere}
 .aviso .aviso-det{color:var(--fg);font-size:13px}.aviso-det em{font-style:normal;font-weight:700}
+#nova-versao{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:70;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#0a3440;color:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 10px 26px rgba(0,0,0,.28);max-width:calc(100vw - 32px)}
+#nova-versao button{background:#f7a823;color:#2c1d00;border:0;border-radius:8px;padding:7px 12px;font-weight:700;cursor:pointer}
 .check-list{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:6px;padding:10px}
 .check-list label{display:flex;gap:8px;align-items:flex-start;overflow-wrap:anywhere}
 .row-add{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto;gap:10px;align-items:end}
@@ -238,7 +240,7 @@ dialog{border-radius:14px}
 
 <div class="app" id="tela-app" hidden>
   <aside class="side">
-    <div class="brand"><b>GTEL</b><span>Chamados</span><small>Central de T.I. · versão 06/11/2026-c</small></div>
+    <div class="brand"><b>GTEL</b><span>Chamados</span><small>Central de T.I. · versão 06/11/2026-d</small></div>
     <button class="side-new" id="btn-novo-side" type="button">+ Abrir chamado</button>
     <nav aria-label="Principal" id="nav"></nav>
     <button class="nav-btn" id="btn-avisos" type="button">Avisos<span class="badge" id="avisos-qtd" hidden></span></button>
@@ -328,6 +330,7 @@ dialog{border-radius:14px}
   <div class="dlg-body"><div class="check-list" id="gc-lista"></div><div class="dlg-foot"><button class="btn" type="button" data-close>Cancelar</button><button class="btn primary" type="submit">Salvar</button></div></div>
 </form></dialog>
 <div id="tip" hidden></div><div id="toast" role="status" hidden></div>
+<div id="nova-versao" role="status" hidden><span>Há uma versão nova do sistema.</span><button type="button" id="nova-versao-btn">Atualizar agora</button></div>
 
 <script>
 // Dados do projeto no Supabase. A chave publica pode ficar aqui; a seguranca esta nas regras do banco.
@@ -620,6 +623,12 @@ document.addEventListener("mouseover",e=>{const t=e.target.closest("[data-tip]")
 
 function preencher(id,ops,todos){$(id).innerHTML=(todos?`<option value="">${todos}</option>`:"")+ops.map(o=>Array.isArray(o)?`<option value="${esc(o[0])}">${esc(o[1])}</option>`:`<option>${esc(o)}</option>`).join("")}
 preencher("f-status",[["andamento","Em andamento (todos)"],...Object.entries(ETAPA).map(([k,v])=>[k,v[0]])],"Todas");preencher("f-prio",Object.keys(PRIOS),"Todas");preencher("f-tipo",TIPOS,"Todos");preencher("n-tipo",TIPOS);preencher("n-prio",Object.keys(PRIOS));
+// Avisa quando existe uma versao mais nova publicada e a aba ficou com a antiga.
+const VERSAO_ATUAL=(document.querySelector(".brand small").textContent.match(/versão\s+(\S+)/)||[])[1];
+async function verificarVersao(){if(!VERSAO_ATUAL||!$("nova-versao").hidden||location.protocol==="file:")return;
+  try{const r=await fetch(location.pathname+"?v="+Date.now(),{cache:"no-store"});if(!r.ok)return;const m=(await r.text()).match(/versão\s+(\d{2}\/\d{2}\/\d{4}-\w+)/);if(m&&m[1]!==VERSAO_ATUAL)$("nova-versao").hidden=false}catch(e){}}
+$("nova-versao-btn").onclick=()=>location.reload();
+setInterval(verificarVersao,300000);window.addEventListener("focus",verificarVersao);
 modoLogin("entrar");
 sb.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_OUT"){S.eu=null;pararTempoReal();fecharDet();mostrar("tela-login")}});
 entrarNoSistema().catch(e=>{toast(traduz(e));mostrar("tela-login")});
