@@ -251,6 +251,7 @@ details summary{cursor:pointer;color:var(--muted)}
   <div class="dlg-body">
     <ol class="steps" id="det-steps" aria-label="Etapas do chamado"></ol>
     <div id="det-acao"></div>
+    <div id="det-prazo"></div>
     <div id="det-info" style="display:flex;flex-direction:column;gap:14px"></div>
     <div class="sec">Anexos</div>
     <ul class="anexos" id="det-anexos"></ul>
@@ -296,6 +297,25 @@ const AJUDA_PRIO={"Baixa":"Pode esperar alguns dias.","Média":"Atrapalha, mas d
 const DICA={"Novo equipamento":"Diga qual equipamento precisa, para quem e por quê.","Manutenção de equipamento":"Diga o que aconteceu, desde quando e se aparece alguma mensagem de erro."};
 const PERFIL={solicitante:"Funcionário",gerente:"Gerente de obra",ti:"T.I.",diretor:"Diretor",admin:"Administrador"};
 const gereUsuarios=()=>S.eu&&["ti","admin"].includes(S.eu.perfil);
+const vePrazo=()=>S.eu&&["ti","diretor","admin"].includes(S.eu.perfil);
+function situacaoPrazo(t){const p=(S.prazos||{})[t.id];if(!p||["reprovado","cancelado"].includes(t.status))return null;
+  const dia=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime(),fim=t.status==="realizado"&&t.encerrado_em?new Date(t.encerrado_em):new Date();
+  const d=Math.round((dia(fim)-dia(new Date(p.prazo+"T00:00:00")))/864e5),pl=n=>`${n} dia${n===1?"":"s"}`;
+  if(t.status==="realizado")return d<=0?{txt:"Feito no prazo",c:"c-green",ok:true}:{txt:`Feito com ${pl(d)} de atraso`,c:"c-red",ok:false};
+  if(d>0)return{txt:`Atrasado ${pl(d)}`,c:"c-red",atrasado:true};
+  if(d===0)return{txt:"Vence hoje",c:"c-amber"};
+  return{txt:`Vence em ${pl(-d)}`,c:"c-blue"}}
+const fmtPrazo=p=>p?p.split("-").reverse().join("/"):"";
+function resumoPrazo(){if(!vePrazo())return"";const T=S.chamados.map(t=>situacaoPrazo(t)).filter(Boolean),fe=T.filter(x=>"ok"in x),ok=fe.filter(x=>x.ok).length,at=T.filter(x=>x.atrasado).length;
+  if(!T.length)return"";
+  return`<div class="card"><h2>Prazos de atendimento</h2><p style="margin:0">${fe.length?`<b>${Math.round(ok/fe.length*100)}%</b> feitos no prazo (${ok} de ${fe.length}). `:"Nenhum chamado com prazo foi concluído ainda. "}<b>${at}</b> em aberto com prazo vencido.</p></div>`}
+function renderPrazo(t){const box=$("det-prazo");if(!vePrazo()){box.innerHTML="";return}
+  const p=S.prazos[t.id],fechado=FECHADOS.includes(t.status),edita=gereUsuarios()&&!fechado,k=JSON.stringify([p&&p.atualizado_em,t.status,S.eu.perfil]);
+  if(box.dataset.k===k)return;box.dataset.k=k;const s=situacaoPrazo(t),h=p?p.historico||[]:[];
+  box.innerHTML=`<div class="ti-box"><h3>Prazo de atendimento</h3><p class="muted" style="margin:0">Visível só para T.I., diretor e administrador.</p>
+  ${p?`<div class="btns" style="align-items:center"><b>${esc(fmtPrazo(p.prazo))}</b>${s?`<span class="pill ${s.c}">${esc(s.txt)}</span>`:""}</div>`:`<p style="margin:0">${fechado?"Nenhum prazo foi definido.":"Prazo ainda não definido."}</p>`}
+  ${edita?`<div class="grid2"><div class="field"><label for="p-data">${p?"Novo prazo":"Data do prazo"}</label><input id="p-data" type="date" value="${esc(p?p.prazo:"")}"></div>${p?'<div class="field"><label for="p-motivo">Motivo da alteração</label><input id="p-motivo" maxlength="300"></div>':""}</div><div class="btns"><button class="btn primary" type="button" data-prazo>${p?"Alterar prazo":"Salvar prazo"}</button></div>`:""}
+  ${h.length>1?`<details><summary>Alterações do prazo (${h.length-1})</summary><ul class="timeline" style="margin-top:8px">${h.slice(1).map(x=>`<li><span class="when">${esc(fmtDH(x.em))} · ${esc(x.por)}</span><p>${esc(fmtPrazo(x.de))} → ${esc(fmtPrazo(x.para))}${x.motivo?"\n"+esc(x.motivo):""}</p></li>`).join("")}</ul></details>`:""}</div>`}
 const NAVS={solicitante:[["chamados","Meus chamados"]],gerente:[["chamados","Chamados da obra"]],ti:[["autorizacoes","Pendentes"],["painel","Painel"],["chamados","Chamados"],["usuarios","Usuários"]],diretor:[["autorizacoes","Autorizações"],["painel","Painel"],["chamados","Chamados"]],admin:[["autorizacoes","Pendentes"],["painel","Painel"],["chamados","Chamados"],["usuarios","Usuários"]]};
 const ETAPAS_TI=["aberto","em_analise","aprovado","em_execucao"];
 function pendentes(){const p=S.eu&&S.eu.perfil,t=S.chamados;
@@ -313,7 +333,7 @@ const pEtapa=s=>{const e=ETAPA[s]||[s,"c-gray"];return`<span class="pill ${e[1]}
 const pPrio=p=>`<span class="pill ${PRIOS[p]||"c-gray"}">${esc(p)}</span>`;
 let toastT;function toast(m){const e=$("toast");e.textContent=m;e.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>e.hidden=true,5000)}
 
-const S={eu:null,chamados:[],eventos:[],anexos:[],usuarios:[],centros:[],gerCentros:[],avisos:[],view:"chamados",openId:null,cadastro:false,canal:null,gcUser:null};
+const S={prazos:{},eu:null,chamados:[],eventos:[],anexos:[],usuarios:[],centros:[],gerCentros:[],avisos:[],view:"chamados",openId:null,cadastro:false,canal:null,gcUser:null};
 const MAX_ARQ=5,MAX_MB=10,TIPOS_ARQ=["image/jpeg","image/png","image/webp","image/heic","image/heif","application/pdf"];
 const fmtTam=b=>b>=1048576?(b/1048576).toLocaleString("pt-BR",{maximumFractionDigits:1})+" MB":Math.max(1,Math.round(b/1024))+" KB";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -370,6 +390,7 @@ async function carregar(){
   if(error){toast(traduz(error));return}
   S.chamados=data||[];
   if(gereUsuarios())await carregarUsuarios();
+  if(vePrazo()){const pz=await sb.from("chamado_prazos").select("*");if(!pz.error)S.prazos=Object.fromEntries((pz.data||[]).map(x=>[x.chamado_id,x]))}else S.prazos={};
   await carregarAvisos();
   renderDados();
 }
@@ -406,8 +427,8 @@ function renderNav(){const pend=pendentes().length;
   $("nav").innerHTML=NAVS[S.eu.perfil].map(([v,n])=>`<button class="nav-btn" data-view="${v}" type="button" ${v===S.view?'aria-current="page"':""}>${esc(n)}${v==="autorizacoes"&&pend?`<span class="badge">${pend}</span>`:""}</button>`).join("");
   document.title=(pend?`(${pend}) `:"")+"Chamados de T.I."}
 function irPara(v){S.view=v;["painel","autorizacoes","chamados","usuarios"].forEach(x=>$("v-"+x).hidden=x!==v);renderNav()}
-function tabela(L){return`<div class="table-wrap"><table><thead><tr><th>Protocolo</th><th>Assunto</th><th>Tipo</th><th>Centro de custo</th><th>Solicitante</th><th>Responsável</th><th>Etapa</th><th>Prioridade</th><th>Aberto em</th></tr></thead><tbody>
-${L.map(t=>`<tr data-id="${esc(t.id)}"><td><button class="proto" type="button" data-open="${esc(t.id)}">${esc(t.protocolo)}</button></td><td><b style="font-weight:600">${esc(t.assunto)}</b></td><td>${esc(t.tipo)}</td><td>${esc(t.centro_nome)}</td><td>${esc(t.solicitante_nome)}</td><td>${t.responsavel_nome?esc(t.responsavel_nome):'<span class="muted">Sem responsável</span>'}</td><td>${pEtapa(t.status)}</td><td>${pPrio(t.prioridade)}</td><td class="nowrap">${esc(fmtD(t.criado_em))}</td></tr>`).join("")}</tbody></table></div>`}
+function tabela(L){return`<div class="table-wrap"><table><thead><tr><th>Protocolo</th><th>Assunto</th><th>Tipo</th><th>Centro de custo</th><th>Solicitante</th><th>Responsável</th><th>Etapa</th><th>Prioridade</th><th>Aberto em</th>${vePrazo()?"<th>Prazo</th>":""}</tr></thead><tbody>
+${L.map(t=>`<tr data-id="${esc(t.id)}"><td><button class="proto" type="button" data-open="${esc(t.id)}">${esc(t.protocolo)}</button></td><td><b style="font-weight:600">${esc(t.assunto)}</b></td><td>${esc(t.tipo)}</td><td>${esc(t.centro_nome)}</td><td>${esc(t.solicitante_nome)}</td><td>${t.responsavel_nome?esc(t.responsavel_nome):'<span class="muted">Sem responsável</span>'}</td><td>${pEtapa(t.status)}</td><td>${pPrio(t.prioridade)}</td><td class="nowrap">${esc(fmtD(t.criado_em))}</td>${vePrazo()?`<td class="nowrap">${S.prazos[t.id]?`${esc(fmtPrazo(S.prazos[t.id].prazo))}${situacaoPrazo(t)?`<br><span class="pill ${situacaoPrazo(t).c}">${esc(situacaoPrazo(t).txt)}</span>`:""}`:'<span class="muted">Sem prazo</span>'}</td>`:""}</tr>`).join("")}</tbody></table></div>`}
 function vazio(tit,txt,novo){return`<div class="card"><div class="empty"><b>${esc(tit)}</b><span>${esc(txt)}</span>${novo?'<button class="btn primary" type="button" data-act="novo">Abrir chamado</button>':""}</div></div>`}
 function renderPainel(){const T=S.chamados,ag=new Date(),ini=new Date(ag.getFullYear(),ag.getMonth(),1).toISOString();
   const abertos=T.filter(t=>!FECHADOS.includes(t.status));
@@ -419,7 +440,7 @@ function renderPainel(){const T=S.chamados,ag=new Date(),ini=new Date(ag.getFull
   T.forEach(t=>{const m=meses.find(x=>x.k===ymd(new Date(t.criado_em)).slice(0,7));if(m)m.c++});
   const max=Math.max(1,...meses.map(m=>m.c));
   const porTipo=TIPOS.map(n=>({n,c:abertos.filter(t=>t.tipo===n).length})).filter(x=>x.c).sort((a,b)=>b.c-a.c),maxT=Math.max(1,...porTipo.map(x=>x.c));
-  $("painel-body").innerHTML=`<div class="cols"><div class="card"><h2>Chamados abertos por mês</h2><div class="bars">${meses.map(m=>`<div class="bar-col" tabindex="0" data-tip="${esc(m.full)}: ${m.c} chamado${m.c===1?"":"s"}"><span>${m.c}</span><i style="height:${m.c?Math.max(4,m.c/max*85):0}%"></i></div>`).join("")}</div><div class="months">${meses.map(m=>`<span>${esc(m.n)}</span>`).join("")}</div></div>
+  $("painel-body").innerHTML=`${resumoPrazo()}<div class="cols"><div class="card"><h2>Chamados abertos por mês</h2><div class="bars">${meses.map(m=>`<div class="bar-col" tabindex="0" data-tip="${esc(m.full)}: ${m.c} chamado${m.c===1?"":"s"}"><span>${m.c}</span><i style="height:${m.c?Math.max(4,m.c/max*85):0}%"></i></div>`).join("")}</div><div class="months">${meses.map(m=>`<span>${esc(m.n)}</span>`).join("")}</div></div>
   <div class="card"><h2>Em aberto por tipo</h2>${porTipo.length?porTipo.map(x=>`<div class="hbar" data-tip="${esc(x.n)}: ${x.c}"><label>${esc(x.n)}</label><div class="track"><i style="width:${x.c/maxT*100}%"></i></div><b>${x.c}</b></div>`).join(""):'<p class="muted" style="margin:0">Nenhum chamado em aberto.</p>'}</div></div>
   <div><h2 style="font-size:15px;font-weight:600;margin-bottom:8px">Últimos chamados</h2>${tabela(T.slice(0,5))}</div>`}
 function filtrados(){const de=$("f-de").value,ate=$("f-ate").value,st=$("f-status").value,pr=$("f-prio").value,ti=$("f-tipo").value,cc=$("f-centro").value,b=$("f-busca").value.trim().toLowerCase();
@@ -470,12 +491,12 @@ function renderDet(){const id=S.openId;if(!id)return;const t=S.chamados.find(c=>
   $("det-info").innerHTML=`<div class="btns" style="align-items:center">${pEtapa(t.status)} ${pPrio(t.prioridade)}</div><div class="desc">${esc(t.descricao)}</div>
   <dl class="meta"><div><dt>Tipo</dt><dd>${esc(t.tipo)}</dd></div><div><dt>Centro de custo</dt><dd>${esc(t.centro_nome)}</dd></div><div><dt>Solicitante</dt><dd>${esc(t.solicitante_nome)}</dd></div><div><dt>Contato</dt><dd>${esc(t.contato)||"Não informado"}</dd></div><div><dt>Equipamento ou patrimônio</dt><dd>${esc(t.patrimonio)||"Não informado"}</dd></div><div><dt>Responsável</dt><dd>${esc(t.responsavel_nome)||"Sem responsável"}</dd></div></dl>`;
   $("det-anexos").innerHTML=S.anexos.length?S.anexos.map(a=>`<li><button class="proto" type="button" data-anexo="${esc(a.caminho)}" style="font-family:inherit;white-space:normal;overflow-wrap:anywhere;text-align:left">${esc(a.nome)}</button><small>${esc(fmtTam(a.tamanho))} · ${esc(a.por_nome)}</small></li>`).join(""):'<li class="muted">Nenhum arquivo anexado.</li>';
-  $("det-enviar").hidden=FECHADOS.includes(t.status);
+  $("det-enviar").hidden=FECHADOS.includes(t.status);renderPrazo(t);
   $("det-tl").innerHTML=S.eventos.map(e=>`<li class="${e.tipo==="mensagem"?"msg":""}"><span class="when">${esc(fmtDH(e.em))} · ${esc(e.por_nome)} (${esc(PERFIL[e.por_perfil]||e.por_perfil)})</span><p><b style="font-weight:600">${esc(e.tipo==="mensagem"?"":e.titulo)}</b>${e.tipo!=="mensagem"&&e.texto?"\n":""}${esc(e.texto||"")}</p></li>`).join("");
   const fechado=FECHADOS.includes(t.status),podeCancelar=!fechado&&t.status!=="em_execucao"&&(gereUsuarios()||t.solicitante_id===S.eu.id);
   $("det-cancelar").hidden=!podeCancelar;$("form-msg").hidden=fechado}
 function renderDados(){renderNav();renderPainel();renderLista();renderAut();renderUsuarios();renderDet()}
-async function abrirDet(id){S.openId=id;S.eventos=[];S.anexos=[];$("det-acao").dataset.k="";$("x-motivo").value="";$("m-texto").value="";$("d-arquivos").value="";$("det-cancelar").open=false;renderDet();$("dlg-det").showModal();await carregarEventos();
+async function abrirDet(id){S.openId=id;S.eventos=[];S.anexos=[];$("det-acao").dataset.k="";$("det-prazo").dataset.k="";$("x-motivo").value="";$("m-texto").value="";$("d-arquivos").value="";$("det-cancelar").open=false;renderDet();$("dlg-det").showModal();await carregarEventos();
   if(S.avisos.some(a=>a.chamado_id===id&&!a.lida)){await sb.rpc("marcar_avisos_lidos",{p_chamado:id});await carregarAvisos()}}
 function fecharDet(){S.openId=null;if($("dlg-det").open)$("dlg-det").close()}
 
@@ -509,6 +530,7 @@ document.addEventListener("click",async e=>{
   const d=e.target.closest("[data-do]");if(d){const k=d.dataset.do,id=S.openId,x=$("a-texto")?$("a-texto").value:"";d.disabled=true;
     const M={analise:["iniciar_analise",{p_id:id},"Análise iniciada."],pedir:["pedir_autorizacao",{p_id:id,p_justificativa:x},"Pedido enviado ao diretor."],direto:["seguir_sem_autorizacao",{p_id:id,p_texto:x},"Execução iniciada."],executar:["iniciar_execucao",{p_id:id,p_texto:x},"Execução iniciada."],concluir:["concluir_chamado",{p_id:id,p_texto:x},"Chamado marcado como realizado."],aprovar:["decidir_autorizacao",{p_id:id,p_aprovado:true,p_parecer:x},"Chamado aprovado."],reprovar:["decidir_autorizacao",{p_id:id,p_aprovado:false,p_parecer:x},"Chamado reprovado."]}[k];
     await acao(...M);d.disabled=false;return}
+  if(e.target.closest("[data-prazo]")){const dt=$("p-data").value,mt=$("p-motivo")?$("p-motivo").value:null;if(!dt){toast("Escolha a data do prazo.");return}await acao("definir_prazo",{p_id:S.openId,p_prazo:dt,p_motivo:mt},"Prazo salvo.");return}
   const an=e.target.closest("[data-anexo]");if(an){const w=window.open("about:blank");const {data,error}=await sb.storage.from("anexos").createSignedUrl(an.dataset.anexo,300);if(error){if(w)w.close();toast(traduz(error));return}if(w)w.location=data.signedUrl;else location.href=data.signedUrl;return}
   const av=e.target.closest("[data-aviso]");if(av){$("dlg-avisos").close();if(!S.chamados.some(c=>c.id===av.dataset.aviso)){toast("Este chamado não está mais disponível para você.");return}if($("dlg-det").open)fecharDet();abrirDet(av.dataset.aviso);return}
   const cd=e.target.closest("[data-cod]");if(cd){await gerarCodigo(cd.dataset.cod,cd.dataset.quem);return}
@@ -531,8 +553,8 @@ function limpar(){["f-de","f-ate","f-busca","f-status","f-prio","f-tipo","f-cent
 $("btn-limpar").onclick=limpar;
 const csvCel=v=>{let s=String(v??"");if(/^[=+\-@]/.test(s))s="'"+s;return'"'+s.replace(/"/g,'""')+'"'};
 $("btn-csv").onclick=()=>{const L=filtrados();if(!L.length){toast("Não há chamados para exportar com esses filtros.");return}
-  const cab=["Protocolo","Assunto","Tipo","Centro de custo","Solicitante","Contato","Equipamento ou patrimônio","Responsável","Etapa","Prioridade","Aberto em","Encerrado em","Descrição"];
-  const l=L.map(t=>[t.protocolo,t.assunto,t.tipo,t.centro_nome,t.solicitante_nome,t.contato,t.patrimonio,t.responsavel_nome,(ETAPA[t.status]||[t.status])[0],t.prioridade,fmtDH(t.criado_em),fmtDH(t.encerrado_em),t.descricao].map(csvCel).join(";"));
+  const cab=["Protocolo","Assunto","Tipo","Centro de custo","Solicitante","Contato","Equipamento ou patrimônio","Responsável","Etapa","Prioridade","Aberto em","Encerrado em","Descrição"].concat(vePrazo()?["Prazo","Situação do prazo"]:[]);
+  const l=L.map(t=>[t.protocolo,t.assunto,t.tipo,t.centro_nome,t.solicitante_nome,t.contato,t.patrimonio,t.responsavel_nome,(ETAPA[t.status]||[t.status])[0],t.prioridade,fmtDH(t.criado_em),fmtDH(t.encerrado_em),t.descricao].concat(vePrazo()?[fmtPrazo((S.prazos[t.id]||{}).prazo),(situacaoPrazo(t)||{}).txt||""]:[]).map(csvCel).join(";"));
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+[cab.map(csvCel).join(";"),...l].join("\r\n")],{type:"text/csv;charset=utf-8"}));a.download=`chamados-ti-${ymd(new Date())}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 const tip=$("tip");function mostraTip(el){const r=el.getBoundingClientRect();tip.textContent=el.dataset.tip;tip.hidden=false;const w=tip.offsetWidth;tip.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2))+"px";tip.style.top=Math.max(8,r.top-30)+"px"}
 document.addEventListener("mouseover",e=>{const t=e.target.closest("[data-tip]");if(t)mostraTip(t);else tip.hidden=true});
