@@ -2,7 +2,7 @@
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Chamados de T.I.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.75.0/dist/umd/supabase.min.js"></script>
 <style>
 
@@ -157,8 +157,51 @@ details summary{cursor:pointer;color:var(--muted)}
 .user-row:first-child{border-top:0}
 .user-row select{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
 @media(max-width:640px){.user-row{grid-template-columns:minmax(0,1fr)}}
-.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}
-@media(max-width:560px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Visual no modelo do Gtel Obras, em petroleo e ambar. */
+:root{--sans:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;--bg:#eef3f5;--line:#dbe5e8;--accent:#0f6f7a;--accent-soft:#e0f1f2;--thead:#0f4c5c;--chart:#0f7c85;--track:#e2ecee;--fg:#14323a;--muted:#587079}
+body{font-size:14px}
+.side{background:linear-gradient(180deg,#0a3440,#0f4c5c);color:#e8f3f4;gap:14px;padding-block:18px}
+.brand{display:block;padding:0 8px 14px;border-bottom:1px solid rgba(255,255,255,.14);font-weight:700}
+.brand b{color:#f7a823;font-size:24px;font-weight:800;letter-spacing:-.5px}
+.brand span{font-size:15px;margin-left:4px;color:#fff}
+.brand small{display:block;font-weight:500;color:#a9c6cc;font-size:11.5px;margin-top:2px}
+.side-new{display:none}
+.nav-btn{color:#d4e5e8;padding:10px 12px;border-radius:10px;font-weight:600}
+.nav-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+.nav-btn[aria-current="page"]{background:#fff;color:#0f5f6b}
+.nav-btn svg{flex:none}
+.who{border-top:1px solid rgba(255,255,255,.14)}
+.who small,.who .link{color:#a9c6cc!important}
+.hero{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center;background:linear-gradient(110deg,#0a3440,#0f6f7a);color:#fff;border-radius:16px;padding:22px 26px}
+.hero small{display:block;color:#f7a823;font-weight:700;font-size:11.5px;letter-spacing:1px;text-transform:uppercase}
+.hero h1{font-size:27px;font-weight:800;letter-spacing:-.5px;margin-top:2px;color:#fff}
+.hero p{margin:3px 0 0;color:#cfe4e7;font-size:13px}
+.hero-btn{display:inline-flex;align-items:center;gap:8px;background:#f7a823;color:#2c1d00;border:0;border-radius:10px;padding:12px 18px;font-weight:700;cursor:pointer}
+.hero-btn:hover{background:#ffb93f}
+.top h1{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--fg);display:flex;align-items:center;gap:8px}
+.top h1::before{content:"";width:9px;height:9px;border-radius:2px;background:#f7a823}
+.tiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.tile{display:flex;align-items:center;gap:13px;padding:15px 16px;border-radius:14px;background:var(--surface);box-shadow:0 1px 3px rgba(10,52,64,.07);transition:box-shadow .15s,transform .15s,border-color .15s}
+.tile:hover{box-shadow:0 6px 16px rgba(10,52,64,.13);transform:translateY(-1px);border-color:var(--accent)}
+.t-ic{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:#0f5f6b;color:#fff}
+.t-ic.alerta{background:#e8890c}
+.tile .t-ic{color:#fff}
+.tile .t-tx b{color:var(--fg)}
+.t-tx{flex:1;min-width:0;display:block}
+.tile .t-tx span{display:block;font-size:12.5px;font-weight:600;color:var(--muted)}
+.tile .t-tx b{font-size:27px;font-weight:800;line-height:1.15}
+.t-ar{color:var(--muted);font-style:normal;font-size:20px}
+.card,.table-wrap{border-radius:14px;box-shadow:0 1px 3px rgba(10,52,64,.07)}
+.btn{border-radius:9px;font-weight:600}
+th{letter-spacing:.2px}
+.dlg-head{background:linear-gradient(110deg,#0a3440,#0f6f7a)}
+dialog{border-radius:14px}
+.auth{background:linear-gradient(135deg,#0a3440,#0f6f7a)}
+.auth-card{border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.25)}
+.auth-card h1 b{color:#e8890c;font-weight:800}
+.step.now i{background:#0f6f7a;border-color:#0f6f7a}
+@media(max-width:899px){.side{padding:10px max(14px,env(safe-area-inset-right,0px)) 10px max(14px,env(safe-area-inset-left,0px));gap:8px}.brand{border:0;padding:0 4px;flex:1 1 100%}.brand small{display:none}.nav-btn{padding:8px 9px;font-size:13px}nav{overflow-x:auto;flex-wrap:nowrap}#btn-avisos{width:auto}.hero{padding:16px 18px}.hero h1{font-size:22px}}
+@media(max-width:560px){.tiles{grid-template-columns:minmax(0,1fr)}}
 .anexos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .anexos li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .anexos small{color:var(--muted)}
@@ -175,7 +218,7 @@ details summary{cursor:pointer;color:var(--muted)}
 <body>
 <section class="auth" id="tela-login" hidden>
   <form class="auth-card" id="form-login">
-    <h1 id="login-titulo">Chamados de T.I.</h1>
+    <h1 id="login-titulo"><b>GTEL</b> Chamados de T.I.</h1>
     <p id="login-ajuda">Entre com seu e-mail e senha.</p>
     <div class="field"><label for="l-email">E-mail</label><input id="l-email" type="email" required autocomplete="email"></div>
     <div class="field" id="l-codigo-w" hidden><label for="l-codigo">Código recebido da T.I.</label><input id="l-codigo" maxlength="20" autocomplete="off" style="text-transform:uppercase"></div>
@@ -194,13 +237,14 @@ details summary{cursor:pointer;color:var(--muted)}
 
 <div class="app" id="tela-app" hidden>
   <aside class="side">
-    <div class="brand"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v12" stroke-dasharray="2 3"/></svg>Chamados de T.I.</div>
+    <div class="brand"><b>GTEL</b><span>Chamados</span><small>Central de T.I. · versão 06/11/2026-b</small></div>
     <button class="side-new" id="btn-novo-side" type="button">+ Abrir chamado</button>
     <nav aria-label="Principal" id="nav"></nav>
     <button class="nav-btn" id="btn-avisos" type="button">Avisos<span class="badge" id="avisos-qtd" hidden></span></button>
     <div class="who"><div><b id="who-nome"></b><small id="who-perfil"></small><br><button class="link" style="color:var(--nav-muted)" type="button" data-sair>Sair</button></div></div>
   </aside>
   <main>
+    <section class="hero"><div><small id="hero-eyebrow">Central de chamados</small><h1 id="hero-nome"></h1><p id="hero-sub"></p></div><button class="hero-btn" id="btn-novo-hero" type="button">+ Abrir chamado</button></section>
     <section id="v-painel" hidden><div class="top" style="margin-bottom:14px"><h1>Painel</h1></div><div class="tiles" id="tiles"></div><div id="painel-body" style="display:flex;flex-direction:column;gap:12px;margin-top:12px"></div></section>
     <section id="v-autorizacoes" hidden><div class="top" style="margin-bottom:14px"><h1 id="titulo-pend">Autorizações pendentes</h1></div><div id="lista-aut"></div></section>
     <section id="v-chamados" hidden>
@@ -296,6 +340,13 @@ const PRIOS={"Baixa":"c-gray","Média":"c-blue","Alta":"c-amber","Urgente":"c-re
 const AJUDA_PRIO={"Baixa":"Pode esperar alguns dias.","Média":"Atrapalha, mas dá para trabalhar.","Alta":"Impede parte do trabalho.","Urgente":"Trabalho parado ou obra afetada."};
 const DICA={"Novo equipamento":"Diga qual equipamento precisa, para quem e por quê.","Manutenção de equipamento":"Diga o que aconteceu, desde quando e se aparece alguma mensagem de erro."};
 const PERFIL={solicitante:"Funcionário",gerente:"Gerente de obra",ti:"T.I.",diretor:"Diretor",admin:"Administrador"};
+const ic=d=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICO={painel:ic('<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>'),
+  autorizacoes:ic('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),aprovar:ic('<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>'),
+  chamados:ic('<path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/>'),meus:ic('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
+  usuarios:ic('<circle cx="9" cy="8" r="4"/><path d="M1 21a8 8 0 0 1 16 0"/><path d="M17 4a4 4 0 0 1 0 8M23 21a8 8 0 0 0-5-7"/>'),avisos:ic('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10 20a2 2 0 0 0 4 0"/>'),
+  aberto:ic('<path d="M4 4h16v12H7l-3 4z"/>'),em_analise:ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/>'),aguardando_aprovacao:ic('<path d="M6 2h12M6 22h12M7 2v5l5 5-5 5v5M17 2v5l-5 5 5 5v5"/>'),
+  aprovado:ic('<path d="M20 6L9 17l-5-5"/>'),em_execucao:ic('<path d="M14 7a4 4 0 0 0 5 5l-9 9a3 3 0 0 1-4-4z"/><path d="M14 7l3-3 3 3-3 3"/>'),realizado:ic('<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>')};
 const gereUsuarios=()=>S.eu&&["ti","admin"].includes(S.eu.perfil);
 const vePrazo=()=>S.eu&&["ti","diretor","admin"].includes(S.eu.perfil);
 function situacaoPrazo(t){const p=(S.prazos||{})[t.id];if(!p||["reprovado","cancelado"].includes(t.status))return null;
@@ -355,6 +406,7 @@ async function entrarNoSistema(){
   if(error){toast(traduz(error));mostrar("tela-pendente");return}
   if(!data||!data.ativo){S.eu=null;mostrar("tela-pendente");return}
   S.eu=data;$("who-nome").textContent=data.nome;$("who-perfil").textContent=PERFIL[data.perfil];
+  $("hero-nome").textContent=`Olá, ${String(data.nome).trim().split(/\s+/)[0]}`;$("hero-sub").textContent=`${PERFIL[data.perfil]} · ${new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"})}`;
   S.view=NAVS[data.perfil][0][0];
   if(data.perfil==="admin"&&!$("u-perfil").querySelector('[value="diretor"]'))$("u-perfil").insertAdjacentHTML("beforeend",'<option value="diretor">Diretor</option>');
   $("titulo-lista").textContent={solicitante:"Meus chamados",gerente:"Chamados da obra"}[data.perfil]||"Chamados";
@@ -426,7 +478,7 @@ async function acao(nome,args,msg){
 
 /* ---------- Telas ---------- */
 function renderNav(){const pend=pendentes().length,aAprovar=S.chamados.filter(c=>c.status==="aguardando_aprovacao").length;
-  $("nav").innerHTML=NAVS[S.eu.perfil].map(([v,n])=>`<button class="nav-btn" data-view="${v}" type="button" ${v===S.view?'aria-current="page"':""}>${esc(n)}${v==="autorizacoes"&&pend?`<span class="badge">${pend}</span>`:v==="aprovar"&&aAprovar?`<span class="badge">${aAprovar}</span>`:""}</button>`).join("");
+  $("nav").innerHTML=NAVS[S.eu.perfil].map(([v,n])=>`<button class="nav-btn" data-view="${v}" type="button" ${v===S.view?'aria-current="page"':""}>${ICO[v==="chamados"&&S.eu.perfil==="solicitante"?"meus":v]||""}${esc(n)}${v==="autorizacoes"&&pend?`<span class="badge">${pend}</span>`:v==="aprovar"&&aAprovar?`<span class="badge">${aAprovar}</span>`:""}</button>`).join("");
   document.title=(pend?`(${pend}) `:"")+"Chamados de T.I."}
 function irPara(v){S.view=v;const sec={aprovar:"autorizacoes",meus:"autorizacoes"}[v]||v;["painel","autorizacoes","chamados","usuarios"].forEach(x=>$("v-"+x).hidden=x!==sec);renderNav();if(S.eu)renderAut()}
 function tabela(L){return`<div class="table-wrap"><table><thead><tr><th>Protocolo</th><th>Assunto</th><th>Tipo</th><th>Centro de custo</th><th>Solicitante</th><th>Responsável</th><th>Etapa</th><th>Prioridade</th><th>Aberto em</th>${vePrazo()?"<th>Prazo</th>":""}</tr></thead><tbody>
@@ -436,7 +488,7 @@ function renderPainel(){const T=S.chamados,ag=new Date(),ini=new Date(ag.getFull
   const abertos=T.filter(t=>!FECHADOS.includes(t.status));
   const qtd=s=>T.filter(t=>t.status===s).length;
   const tiles=[["Abertos, aguardando a T.I.",qtd("aberto"),"aberto"],["Em análise pela T.I.",qtd("em_analise"),"em_analise"],["Aguardando aprovação do diretor",qtd("aguardando_aprovacao"),"aguardando_aprovacao"],["Aprovados, a executar",qtd("aprovado"),"aprovado"],["Em execução pela T.I.",qtd("em_execucao"),"em_execucao"],["Realizados no mês",T.filter(t=>t.status==="realizado"&&(t.encerrado_em||"")>=ini).length,"realizado"]];
-  $("tiles").innerHTML=tiles.map(x=>`<button class="tile" type="button" data-filtro="${x[2]}"><span>${esc(x[0])}</span><b>${x[1]}</b></button>`).join("");
+  $("tiles").innerHTML=tiles.map(x=>`<button class="tile" type="button" data-filtro="${x[2]}"><span class="t-ic ${x[2]==="aguardando_aprovacao"?"alerta":""}">${ICO[x[2]]}</span><span class="t-tx"><span>${esc(x[0])}</span><b>${x[1]}</b></span><i class="t-ar" aria-hidden="true">›</i></button>`).join("");
   if(!T.length){$("painel-body").innerHTML=vazio("Nenhum chamado por enquanto","Quando alguém abrir um chamado, ele aparece aqui.");return}
   const meses=[];for(let i=5;i>=0;i--){const d=new Date(ag.getFullYear(),ag.getMonth()-i,1);meses.push({k:ymd(d).slice(0,7),n:d.toLocaleDateString("pt-BR",{month:"short"}).replace(".",""),c:0,full:d.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})})}
   T.forEach(t=>{const m=meses.find(x=>x.k===ymd(new Date(t.criado_em)).slice(0,7));if(m)m.c++});
@@ -506,7 +558,7 @@ function fecharDet(){S.openId=null;if($("dlg-det").open)$("dlg-det").close()}
 /* ---------- Eventos ---------- */
 async function abrirNovo(){$("form-novo").reset();await carregarCentros();if(!S.centrosAbrir.length){toast("Nenhuma obra foi liberada para você. Fale com a T.I.");return}$("n-prio").value="Média";ajudaNovo();$("dlg-novo").showModal();$("n-assunto").focus()}
 function ajudaNovo(){$("n-prio-ajuda").textContent=AJUDA_PRIO[$("n-prio").value]||"";$("n-desc").placeholder=DICA[$("n-tipo").value]||"Explique o que está acontecendo ou o que você precisa."}
-$("btn-novo-side").onclick=abrirNovo;
+$("btn-novo-side").onclick=abrirNovo;$("btn-novo-hero").onclick=abrirNovo;$("btn-avisos").insertAdjacentHTML("afterbegin",ICO.avisos);
 $("form-novo").addEventListener("submit",async ev=>{ev.preventDefault();
   const fs=[...$("n-arquivos").files],inv=validarArquivos(fs);if(inv){toast(inv);return}
   const b=$("n-enviar");b.disabled=true;
