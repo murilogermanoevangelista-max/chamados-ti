@@ -210,6 +210,7 @@ dialog{border-radius:14px}
 .aviso b{display:block;font-weight:500;overflow-wrap:anywhere}.aviso.nova b{font-weight:700}
 .aviso.nova b::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:6px}
 .aviso span,.aviso small{display:block;color:var(--muted);overflow-wrap:anywhere}
+.aviso .aviso-det{color:var(--fg);font-size:13px}.aviso-det em{font-style:normal;font-weight:700}
 .check-list{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:6px;padding:10px}
 .check-list label{display:flex;gap:8px;align-items:flex-start;overflow-wrap:anywhere}
 .row-add{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto;gap:10px;align-items:end}
@@ -237,7 +238,7 @@ dialog{border-radius:14px}
 
 <div class="app" id="tela-app" hidden>
   <aside class="side">
-    <div class="brand"><b>GTEL</b><span>Chamados</span><small>Central de T.I. · versão 06/11/2026-b</small></div>
+    <div class="brand"><b>GTEL</b><span>Chamados</span><small>Central de T.I. · versão 06/11/2026-c</small></div>
     <button class="side-new" id="btn-novo-side" type="button">+ Abrir chamado</button>
     <nav aria-label="Principal" id="nav"></nav>
     <button class="nav-btn" id="btn-avisos" type="button">Avisos<span class="badge" id="avisos-qtd" hidden></span></button>
@@ -460,7 +461,7 @@ async function carregarEventos(){if(!S.openId)return;const id=S.openId;const [e,
 let rtT;function aoMudar(){clearTimeout(rtT);rtT=setTimeout(async()=>{await carregar();await carregarEventos()},300)}
 function iniciarTempoReal(){pararTempoReal();S.canal=sb.channel("chamados-ti").on("postgres_changes",{event:"*",schema:"public",table:"chamados"},aoMudar).on("postgres_changes",{event:"INSERT",schema:"public",table:"chamado_eventos"},aoMudar).on("postgres_changes",{event:"*",schema:"public",table:"notificacoes",filter:"usuario_id=eq."+S.eu.id},aoMudar).subscribe()}
 function renderAvisos(){const n=S.avisos.filter(a=>!a.lida).length,b=$("avisos-qtd");b.textContent=n;b.hidden=!n;
-  $("av-lista").innerHTML=S.avisos.length?S.avisos.map(a=>`<button class="aviso ${a.lida?"":"nova"}" type="button" data-aviso="${esc(a.chamado_id)}"><b>${esc(a.titulo)}</b>${a.texto?`<span>${esc(a.texto)}</span>`:""}<small>${esc(fmtDH(a.em))}</small></button>`).join(""):'<p class="muted" style="margin:0">Nenhum aviso por enquanto.</p>'}
+  $("av-lista").innerHTML=S.avisos.length?S.avisos.map(a=>{const c=S.chamados.find(x=>x.id===a.chamado_id);return`<button class="aviso ${a.lida?"":"nova"}" type="button" data-aviso="${esc(a.chamado_id)}"><b>${esc(a.titulo)}</b>${a.texto?`<span>${esc(a.texto)}</span>`:""}${c?`<span class="aviso-det"><em>Obra:</em> ${esc(c.centro_nome)}</span><span class="aviso-det"><em>Aberto por:</em> ${esc(c.solicitante_nome)}${c.contato?` · ${esc(c.contato)}`:""}</span>`:""}<small>${esc(fmtDH(a.em))}</small></button>`}).join(""):'<p class="muted" style="margin:0">Nenhum aviso por enquanto.</p>'}
 function validarArquivos(fs){if(fs.length>MAX_ARQ)return`Envie no máximo ${MAX_ARQ} arquivos por vez.`;for(const f of fs){if(f.size>MAX_MB*1048576)return`${f.name} passa de ${MAX_MB} MB.`;if(!TIPOS_ARQ.includes(f.type))return`${f.name} não é foto ou PDF.`}return""}
 const nomeSeguro=n=>n.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9._-]+/g,"_").slice(-80)||"arquivo";
 async function enviarArquivos(id,fs){let ok=0;for(const f of fs){
