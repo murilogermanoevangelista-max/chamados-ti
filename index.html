@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Chamados de T.I.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.75.0/dist/umd/supabase.min.js"></script>
+<style>
+
+/* Layout: barra lateral escura de sistema interno + area de trabalho com tabelas de cabecalho ardosia. */
+:root{
+  --bg:#f1f4f8;--surface:#ffffff;--surface-2:#f7f9fb;--fg:#1d2a38;--muted:#5b6b7c;--line:#d9e0e8;
+  --nav:#2c3e52;--nav-2:#3a4f66;--nav-fg:#e6edf5;--nav-muted:#a9b9c9;--thead:#3a4f66;--thead-fg:#ffffff;
+  --accent:#1766c9;--accent-fg:#ffffff;--accent-soft:#e3effc;--chart:#2f7ddb;--track:#e8edf3;
+  --blue-bg:#dfeeff;--blue-fg:#0f4f9e;--violet-bg:#ece7fb;--violet-fg:#51389f;--teal-bg:#d8f2f0;--teal-fg:#0d5f5b;
+  --amber-bg:#fdefc9;--amber-fg:#7a5200;--green-bg:#dcf3e2;--green-fg:#1a6232;--gray-bg:#e8ecf1;--gray-fg:#4a5866;--red-bg:#fbe0e0;--red-fg:#a11f24;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;--mono:"IBM Plex Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141b23;--surface:#1d2732;--surface-2:#222e3a;--fg:#e7edf3;--muted:#9eafc0;--line:#34424f;
+  --nav:#101820;--nav-2:#22303e;--thead:#2d3e4f;--accent:#5aa2f0;--accent-fg:#0d1a28;--accent-soft:#1d3550;--chart:#5aa2f0;--track:#2b3845;
+  --blue-bg:#17365a;--blue-fg:#a9d2fb;--violet-bg:#2f2857;--violet-fg:#cabdf7;--teal-bg:#123f3e;--teal-fg:#9ce5df;
+  --amber-bg:#46350b;--amber-fg:#f6d680;--green-bg:#163f25;--green-fg:#a4e4b6;--gray-bg:#2e3a46;--gray-fg:#c1ccd7;--red-bg:#4f1c1f;--red-fg:#f9b9bb;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141b23;--surface:#1d2732;--surface-2:#222e3a;--fg:#e7edf3;--muted:#9eafc0;--line:#34424f;
+  --nav:#101820;--nav-2:#22303e;--thead:#2d3e4f;--accent:#5aa2f0;--accent-fg:#0d1a28;--accent-soft:#1d3550;--chart:#5aa2f0;--track:#2b3845;
+  --blue-bg:#17365a;--blue-fg:#a9d2fb;--violet-bg:#2f2857;--violet-fg:#cabdf7;--teal-bg:#123f3e;--teal-fg:#9ce5df;
+  --amber-bg:#46350b;--amber-fg:#f6d680;--green-bg:#163f25;--green-fg:#a4e4b6;--gray-bg:#2e3a46;--gray-fg:#c1ccd7;--red-bg:#4f1c1f;--red-fg:#f9b9bb;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:400 14px/1.45 var(--sans)}
+h1,h2,h3{margin:0;line-height:1.25;text-wrap:balance}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:216px minmax(0,1fr);min-height:100vh}
+.side{background:var(--nav);color:var(--nav-fg);padding-block:16px;padding-right:12px;padding-left:max(12px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:18px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;align-self:start}
+.brand{display:flex;gap:10px;align-items:center;font-weight:700;font-size:15px;padding:2px 6px}
+.brand svg{flex:none}
+nav{display:flex;flex-direction:column;gap:4px}
+.nav-btn{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;color:var(--nav-muted);padding:9px 10px;border-radius:6px;text-align:left;cursor:pointer;font-weight:500}
+.nav-btn:hover{background:var(--nav-2);color:var(--nav-fg)}
+.nav-btn[aria-current="page"]{background:var(--nav-2);color:#fff}
+.side-new{background:var(--accent);color:var(--accent-fg);border:0;border-radius:6px;padding:10px;font-weight:600;cursor:pointer;width:100%}
+.who{margin-top:auto;display:flex;gap:9px;align-items:center;padding:8px 6px;border-top:1px solid var(--nav-2);min-width:0}
+.who img{width:28px;height:28px;border-radius:50%;flex:none}
+.who div{min-width:0}.who b{display:block;font-weight:600;overflow-wrap:anywhere;font-size:13px}.who small{color:var(--nav-muted)}
+main{min-width:0;padding-block:20px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+@media(min-width:900px){main{padding-left:24px;padding-right:max(24px,env(safe-area-inset-right,0px))}}
+.top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.top h1{font-size:21px;font-weight:700}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:600}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.demo{background:var(--amber-bg);color:var(--amber-fg);border-radius:6px;padding:9px 12px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between}
+.demo label{display:inline-flex;gap:6px;align-items:center}
+.demo select{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:5px;padding:3px 6px}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:9px 12px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;text-align:left;cursor:pointer}
+.tile:hover{border-color:var(--accent)}
+.tile span{color:var(--muted);font-weight:500}
+.tile b{display:block;font-size:30px;line-height:1.15;font-weight:700;font-variant-numeric:tabular-nums}
+.cols{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.card h2{font-size:15px;font-weight:600;margin-bottom:10px}
+.bars{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;height:170px;align-items:end;border-bottom:1px solid var(--line)}
+.bar-col{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;border:0;background:none;padding:0;border-radius:4px 4px 0 0}
+.bar-col:hover{background:var(--surface-2)}
+.bar-col i{display:block;width:min(30px,70%);background:var(--chart);border-radius:4px 4px 0 0;min-height:2px}
+.bar-col span{font-variant-numeric:tabular-nums;font-weight:600;font-size:12px}
+.months{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;margin-top:5px;color:var(--muted);font-size:12px;text-align:center}
+.hbar{display:grid;grid-template-columns:minmax(0,1fr) 28px;gap:2px 8px;align-items:center;margin-bottom:9px}
+.hbar label{grid-column:1/3;font-size:13px}
+.hbar .track{height:9px;background:var(--track);border-radius:4px;overflow:hidden}
+.hbar .track i{display:block;height:100%;background:var(--chart);border-radius:0 4px 4px 0}
+.hbar b{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field>span,.field>label{font-weight:500;font-size:13px}
+.field input,.field select,.field textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+.field textarea{resize:vertical;min-height:96px}
+.field small{color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{border:1px solid var(--accent);color:var(--accent);background:none;border-radius:5px;padding:3px 9px;font-size:13px;cursor:pointer}
+.chip:hover,.chip[aria-pressed="true"]{background:var(--accent-soft)}
+.table-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:860px}
+th{background:var(--thead);color:var(--thead-fg);text-align:left;font-weight:600;padding:9px 10px;white-space:nowrap}
+td{padding:9px 10px;border-top:1px solid var(--line);vertical-align:middle}
+tbody tr{cursor:pointer}tbody tr:hover td{background:var(--surface-2)}
+.proto{font-family:var(--mono);font-size:12.5px;background:none;border:0;color:var(--accent);padding:0;cursor:pointer;text-decoration:underline;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.c-blue{background:var(--blue-bg);color:var(--blue-fg)}.c-violet{background:var(--violet-bg);color:var(--violet-fg)}.c-teal{background:var(--teal-bg);color:var(--teal-fg)}.c-amber{background:var(--amber-bg);color:var(--amber-fg)}.c-green{background:var(--green-bg);color:var(--green-fg)}.c-gray{background:var(--gray-bg);color:var(--gray-fg)}.c-red{background:var(--red-bg);color:var(--red-fg)}
+.muted{color:var(--muted)}.nowrap{white-space:nowrap}
+.empty{padding:28px 18px;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:10px;align-items:center}
+.empty b{color:var(--fg);font-size:15px}
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);padding:0;width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 32px)}
+dialog::backdrop{background:rgba(15,25,35,.55)}
+.dlg-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:14px 18px;background:var(--thead);color:var(--thead-fg)}
+.dlg-head h2{font-size:16px;font-weight:600;overflow-wrap:anywhere}
+.dlg-head .x{background:none;border:0;color:inherit;font-size:20px;line-height:1;cursor:pointer;padding:2px 6px}
+.dlg-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.dlg-foot{display:flex;justify-content:flex-end;gap:8px}
+.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+.meta dt{color:var(--muted);font-size:12.5px}.meta dd{margin:0;font-weight:500;overflow-wrap:anywhere}
+.desc{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface-2);border-radius:6px;padding:10px 12px}
+.ti-box{border:1px solid var(--line);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.ti-box h3,.sec{font-size:14px;font-weight:600}
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.timeline li{border-left:2px solid var(--line);padding-left:10px}
+.timeline .when{color:var(--muted);font-size:12.5px}
+.timeline p{margin:1px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.timeline li.msg{border-left-color:var(--accent)}
+#tip{position:fixed;z-index:50;background:var(--fg);color:var(--bg);padding:4px 8px;border-radius:5px;font-size:12.5px;pointer-events:none}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);border-radius:6px;padding:8px 14px;z-index:60;max-width:calc(100vw - 32px)}
+@media(max-width:899px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:sticky;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;padding-block:10px;z-index:5;padding-right:max(12px,env(safe-area-inset-right,0px))}
+  .brand{flex:1 1 auto}nav{flex-direction:row;order:3;flex:1 1 100%}.nav-btn{justify-content:center;padding:7px 8px}
+  .side-new{width:auto;padding:7px 12px}.who{display:none}
+  .cols{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:560px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2,.meta{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:no-preference){.bar-col i,.hbar .track i{transition:height .2s,width .2s}}
+
+body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+.auth{min-height:100vh;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));background:var(--nav)}
+.auth-card{background:var(--surface);color:var(--fg);border-radius:10px;padding:24px;width:min(400px,100%);display:flex;flex-direction:column;gap:14px}
+.auth-card h1{font-size:21px;font-weight:700}
+.auth-card p{margin:0;color:var(--muted)}
+.link{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;padding:0}
+.badge{margin-left:auto;background:var(--red-fg);color:#fff;border-radius:999px;font-size:12px;font-weight:700;padding:0 7px;line-height:18px}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.step{position:relative;padding-top:26px;text-align:center;font-size:12.5px;color:var(--muted);min-width:0}
+.step::before{content:"";position:absolute;top:10px;left:-50%;width:100%;height:3px;background:var(--line)}
+.step:first-child::before{display:none}
+.step i{position:absolute;top:0;left:50%;margin-left:-11px;width:22px;height:22px;border-radius:50%;background:var(--surface);border:2px solid var(--line);font-style:normal;font-weight:700;font-size:12px;line-height:18px;z-index:1}
+.step b{display:block;font-weight:600;color:inherit;overflow-wrap:anywhere}
+.step small{display:block;color:var(--muted);font-size:11.5px}
+.step.done{color:var(--fg)}.step.done::before{background:var(--green-fg)}.step.done i{background:var(--green-fg);border-color:var(--green-fg);color:var(--surface)}
+.step.now{color:var(--fg)}.step.now::before{background:var(--green-fg)}.step.now i{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.step.fail{color:var(--red-fg)}.step.fail::before{background:var(--green-fg)}.step.fail i{background:var(--red-fg);border-color:var(--red-fg);color:var(--surface)}
+.step.skip i{border-style:dashed}
+@media(max-width:560px){.steps{grid-template-columns:minmax(0,1fr);gap:0}
+  .step{padding:0 0 12px 32px;text-align:left}.step::before{top:-12px;left:10px;width:3px;height:24px}
+  .step i{left:0;margin:0}}
+.acao{border:1px solid var(--accent);background:var(--accent-soft);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.acao h3{font-size:14px;font-weight:600}.acao p{margin:0}
+.btn.danger{background:var(--red-fg);border-color:var(--red-fg);color:var(--surface);font-weight:600}
+details summary{cursor:pointer;color:var(--muted)}
+.timeline small.perfil{color:var(--muted)}
+.user-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.user-row:first-child{border-top:0}
+.user-row select{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+@media(max-width:640px){.user-row{grid-template-columns:minmax(0,1fr)}}
+.anexos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.anexos li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.anexos small{color:var(--muted)}
+.aviso{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:10px 2px;cursor:pointer}
+.aviso:first-child{border-top:0}.aviso:hover{background:var(--surface-2)}
+.aviso b{display:block;font-weight:500;overflow-wrap:anywhere}.aviso.nova b{font-weight:700}
+.aviso.nova b::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:6px}
+.aviso span,.aviso small{display:block;color:var(--muted);overflow-wrap:anywhere}
+.check-list{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:6px;padding:10px}
+.check-list label{display:flex;gap:8px;align-items:flex-start;overflow-wrap:anywhere}
+.row-add{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto;gap:10px;align-items:end}
+@media(max-width:640px){.row-add{grid-template-columns:minmax(0,1fr)}}
+</style></head>
+<body>
+<section class="auth" id="tela-login" hidden>
+  <form class="auth-card" id="form-login">
+    <h1 id="login-titulo">Chamados de T.I.</h1>
+    <p id="login-ajuda">Entre com seu e-mail e senha.</p>
+    <div class="field"><label for="l-email">E-mail</label><input id="l-email" type="email" required autocomplete="email"></div>
+    <div class="field" id="l-codigo-w" hidden><label for="l-codigo">Código recebido da T.I.</label><input id="l-codigo" maxlength="20" autocomplete="off" style="text-transform:uppercase"></div>
+    <div class="field"><label for="l-senha" id="l-senha-rot">Senha</label><input id="l-senha" type="password" required minlength="8" autocomplete="current-password"><small id="l-senha-ajuda" hidden>Use pelo menos 8 caracteres.</small></div>
+    <button class="btn primary" type="submit" id="l-enviar">Entrar</button>
+    <div class="btns" style="justify-content:space-between"><button class="link" type="button" id="l-primeiro">Primeiro acesso</button><button class="link" type="button" id="l-esqueci">Esqueci minha senha</button></div>
+  </form>
+</section>
+<section class="auth" id="tela-pendente" hidden>
+  <div class="auth-card">
+    <h1>Conta sem acesso</h1>
+    <p>Sua conta está bloqueada ou ainda não foi liberada. Fale com a T.I. e depois clique em Verificar de novo.</p>
+    <div class="btns"><button class="btn primary" type="button" id="p-verificar">Verificar de novo</button><button class="btn" type="button" data-sair>Sair</button></div>
+  </div>
+</section>
+
+<div class="app" id="tela-app" hidden>
+  <aside class="side">
+    <div class="brand"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v12" stroke-dasharray="2 3"/></svg>Chamados de T.I.</div>
+    <button class="side-new" id="btn-novo-side" type="button">+ Abrir chamado</button>
+    <nav aria-label="Principal" id="nav"></nav>
+    <button class="nav-btn" id="btn-avisos" type="button">Avisos<span class="badge" id="avisos-qtd" hidden></span></button>
+    <div class="who"><div><b id="who-nome"></b><small id="who-perfil"></small><br><button class="link" style="color:var(--nav-muted)" type="button" data-sair>Sair</button></div></div>
+  </aside>
+  <main>
+    <section id="v-painel" hidden><div class="top" style="margin-bottom:14px"><h1>Painel</h1></div><div class="tiles" id="tiles"></div><div id="painel-body" style="display:flex;flex-direction:column;gap:12px;margin-top:12px"></div></section>
+    <section id="v-autorizacoes" hidden><div class="top" style="margin-bottom:14px"><h1>Autorizações pendentes</h1></div><div id="lista-aut"></div></section>
+    <section id="v-chamados" hidden>
+      <div class="top" style="margin-bottom:14px"><h1 id="titulo-lista">Chamados</h1>
+        <div class="btns"><button class="btn" id="btn-limpar" type="button">Limpar filtros</button><button class="btn" id="btn-csv" type="button">Exportar para Excel (CSV)</button></div></div>
+      <div class="card" style="margin-bottom:12px"><div class="filters">
+        <div class="field"><label for="f-de">Data inicial</label><input id="f-de" type="date"></div>
+        <div class="field"><label for="f-ate">Data final</label><input id="f-ate" type="date"></div>
+        <div class="field"><label for="f-status">Etapa</label><select id="f-status"></select></div>
+        <div class="field"><label for="f-prio">Prioridade</label><select id="f-prio"></select></div>
+        <div class="field"><label for="f-tipo">Tipo</label><select id="f-tipo"></select></div>
+        <div class="field"><label for="f-centro">Centro de custo</label><select id="f-centro"></select></div>
+        <div class="field" style="grid-column:1/-1"><label for="f-busca">Buscar</label><input id="f-busca" type="search" placeholder="Protocolo, assunto, centro de custo, patrimônio"></div>
+      </div></div>
+      <p class="muted" id="contagem" style="margin:0 0 8px"></p><div id="lista"></div>
+    </section>
+    <section id="v-usuarios" hidden><div class="top" style="margin-bottom:14px"><h1>Usuários</h1></div><p class="muted" style="margin:0 0 10px">Cadastre o e-mail e passe o código à pessoa. No primeiro acesso, ela cria a própria senha. A conta do diretor é definida no painel do Supabase.</p>
+      <form class="card" id="form-usuario" style="margin-bottom:12px"><div class="filters">
+        <div class="field"><label for="u-nome">Nome completo</label><input id="u-nome" required maxlength="120"></div>
+        <div class="field"><label for="u-email">E-mail</label><input id="u-email" type="email" required></div>
+        <div class="field"><label for="u-setor">Setor ou obra</label><input id="u-setor" maxlength="80"></div>
+        <div class="field"><label for="u-perfil">Perfil</label><select id="u-perfil"><option value="solicitante">Funcionário</option><option value="gerente">Gerente de obra</option><option value="ti">T.I.</option></select></div>
+      </div><div class="btns" style="margin-top:10px"><button class="btn primary" type="submit">Cadastrar e gerar código</button></div></form>
+      <div id="lista-convites"></div>
+      <div class="card" id="lista-usuarios"></div>
+      <h2 style="font-size:15px;font-weight:600;margin:18px 0 8px">Novo centro de custo</h2>
+      <form class="card row-add" id="form-centro"><div class="field"><label for="cc-codigo">Código</label><input id="cc-codigo" required maxlength="40"></div><div class="field"><label for="cc-nome">Nome</label><input id="cc-nome" required maxlength="120"></div><button class="btn primary" type="submit">Adicionar</button></form>
+    </section>
+  </main>
+</div>
+
+<dialog id="dlg-novo" aria-labelledby="novo-titulo"><form id="form-novo">
+  <div class="dlg-head"><h2 id="novo-titulo">Abrir chamado</h2><button class="x" type="button" data-close aria-label="Fechar">×</button></div>
+  <div class="dlg-body">
+    <div class="grid2"><div class="field"><label for="n-tipo">O que você precisa?</label><select id="n-tipo" required></select></div>
+    <div class="field"><label for="n-prio">Prioridade</label><select id="n-prio" required></select><small id="n-prio-ajuda"></small></div></div>
+    <div class="field"><label for="n-assunto">Assunto</label><input id="n-assunto" required maxlength="120" placeholder="Ex.: notebook não liga"></div>
+    <div class="field"><label for="n-desc">Descrição</label><textarea id="n-desc" required maxlength="4000"></textarea></div>
+    <div class="grid2"><div class="field"><label for="n-centro">Centro de custo</label><select id="n-centro" required></select></div>
+    <div class="field"><label for="n-contato">Ramal ou celular para contato</label><input id="n-contato" maxlength="60"></div></div>
+    <div class="field"><label for="n-patrimonio">Equipamento ou patrimônio (se houver)</label><input id="n-patrimonio" maxlength="80"></div>
+    <div class="field"><label for="n-arquivos">Fotos ou PDFs (opcional)</label><input id="n-arquivos" type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf"><small>Até 5 arquivos, com no máximo 10 MB cada.</small></div>
+    <div class="dlg-foot"><button class="btn" type="button" data-close>Cancelar</button><button class="btn primary" type="submit" id="n-enviar">Abrir chamado</button></div>
+  </div></form></dialog>
+
+<dialog id="dlg-det" aria-labelledby="det-titulo">
+  <div class="dlg-head"><h2 id="det-titulo"></h2><button class="x" type="button" data-close aria-label="Fechar">×</button></div>
+  <div class="dlg-body">
+    <ol class="steps" id="det-steps" aria-label="Etapas do chamado"></ol>
+    <div id="det-acao"></div>
+    <div id="det-info" style="display:flex;flex-direction:column;gap:14px"></div>
+    <div class="sec">Anexos</div>
+    <ul class="anexos" id="det-anexos"></ul>
+    <div class="field" id="det-enviar"><label for="d-arquivos">Adicionar fotos ou PDFs</label><input id="d-arquivos" type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf"></div>
+    <div class="sec">Linha do tempo</div>
+    <ul class="timeline" id="det-tl"></ul>
+    <form id="form-msg" style="display:flex;flex-direction:column;gap:8px">
+      <div class="field"><label for="m-texto">Escrever uma mensagem</label><textarea id="m-texto" required maxlength="2000" style="min-height:66px"></textarea></div>
+      <div class="dlg-foot"><button class="btn" type="submit">Enviar mensagem</button></div>
+    </form>
+    <details id="det-cancelar" hidden><summary>Cancelar este chamado</summary>
+      <div class="field" style="margin-top:8px"><label for="x-motivo">Motivo do cancelamento</label><textarea id="x-motivo" maxlength="2000" style="min-height:60px"></textarea></div>
+      <div class="dlg-foot" style="margin-top:8px"><button class="btn danger" type="button" id="x-enviar">Cancelar chamado</button></div>
+    </details>
+  </div>
+</dialog>
+<dialog id="dlg-codigo" aria-labelledby="cod-titulo">
+  <div class="dlg-head"><h2 id="cod-titulo">Código de acesso</h2><button class="x" type="button" data-close aria-label="Fechar">×</button></div>
+  <div class="dlg-body"><p style="margin:0">Passe este código a <b id="cod-quem"></b>. Ele vale por 14 dias, funciona uma vez e não será mostrado de novo.</p>
+    <div class="desc" id="cod-valor" style="font:500 24px var(--mono);text-align:center;letter-spacing:2px"></div>
+    <div class="dlg-foot"><button class="btn" type="button" id="cod-copiar">Copiar código</button><button class="btn primary" type="button" data-close>Concluído</button></div></div>
+</dialog>
+<dialog id="dlg-avisos" aria-labelledby="av-titulo">
+  <div class="dlg-head"><h2 id="av-titulo">Avisos</h2><button class="x" type="button" data-close aria-label="Fechar">×</button></div>
+  <div class="dlg-body"><div class="btns"><button class="btn" type="button" id="av-todos">Marcar todos como lidos</button></div><div id="av-lista"></div></div>
+</dialog>
+<dialog id="dlg-centros" aria-labelledby="gc-titulo"><form id="form-gc">
+  <div class="dlg-head"><h2 id="gc-titulo">Centros de custo do gerente</h2><button class="x" type="button" data-close aria-label="Fechar">×</button></div>
+  <div class="dlg-body"><div class="check-list" id="gc-lista"></div><div class="dlg-foot"><button class="btn" type="button" data-close>Cancelar</button><button class="btn primary" type="submit">Salvar</button></div></div>
+</form></dialog>
+<div id="tip" hidden></div><div id="toast" role="status" hidden></div>
+
+<script>
+// Dados do projeto no Supabase. A chave publica pode ficar aqui; a seguranca esta nas regras do banco.
+const SUPABASE_URL="https://stjctnstnfrjqenmelfy.supabase.co";
+const SUPABASE_KEY="sb_publishable_LbpOcTtVj9ycucAgpInSLg_-7BK4vEb";
+
+const TIPOS=["Manutenção de equipamento","Novo equipamento","Acessos e sistemas","Internet e rede","Impressora","Dúvida ou suporte","Outro"];
+const ETAPA={aberto:["Aberto","c-blue"],em_analise:["Em análise","c-violet"],aguardando_aprovacao:["Aguardando autorização","c-amber"],aprovado:["Aprovado","c-green"],reprovado:["Reprovado","c-red"],em_execucao:["Em execução","c-teal"],realizado:["Realizado","c-green"],cancelado:["Cancelado","c-gray"]};
+const FECHADOS=["realizado","reprovado","cancelado"];
+const PRIOS={"Baixa":"c-gray","Média":"c-blue","Alta":"c-amber","Urgente":"c-red"};
+const AJUDA_PRIO={"Baixa":"Pode esperar alguns dias.","Média":"Atrapalha, mas dá para trabalhar.","Alta":"Impede parte do trabalho.","Urgente":"Trabalho parado ou obra afetada."};
+const DICA={"Novo equipamento":"Diga qual equipamento precisa, para quem e por quê.","Manutenção de equipamento":"Diga o que aconteceu, desde quando e se aparece alguma mensagem de erro."};
+const PERFIL={solicitante:"Funcionário",gerente:"Gerente de obra",ti:"T.I.",diretor:"Diretor"};
+const NAVS={solicitante:[["chamados","Meus chamados"]],gerente:[["chamados","Chamados da obra"],["painel","Painel"]],ti:[["painel","Painel"],["chamados","Chamados"],["usuarios","Usuários"]],diretor:[["autorizacoes","Autorizações"],["painel","Painel"],["chamados","Chamados"]]};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const fmtD=i=>i?new Date(i).toLocaleDateString("pt-BR"):"";
+const fmtDH=i=>{if(!i)return"";const d=new Date(i);return d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})};
+const pEtapa=s=>{const e=ETAPA[s]||[s,"c-gray"];return`<span class="pill ${e[1]}">${esc(e[0])}</span>`};
+const pPrio=p=>`<span class="pill ${PRIOS[p]||"c-gray"}">${esc(p)}</span>`;
+let toastT;function toast(m){const e=$("toast");e.textContent=m;e.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>e.hidden=true,5000)}
+
+const S={eu:null,chamados:[],eventos:[],anexos:[],usuarios:[],centros:[],gerCentros:[],avisos:[],view:"chamados",openId:null,cadastro:false,canal:null,gcUser:null};
+const MAX_ARQ=5,MAX_MB=10,TIPOS_ARQ=["image/jpeg","image/png","image/webp","image/heic","image/heif","application/pdf"];
+const fmtTam=b=>b>=1048576?(b/1048576).toLocaleString("pt-BR",{maximumFractionDigits:1})+" MB":Math.max(1,Math.round(b/1024))+" KB";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+function mostrar(t){["tela-login","tela-pendente","tela-app"].forEach(x=>$(x).hidden=x!==t)}
+function traduz(e){const m=(e&&e.message)||"";
+  if(/Invalid login/i.test(m))return"E-mail ou senha incorretos.";
+  if(/already registered/i.test(m))return"Este e-mail já tem conta. Use Entrar ou Esqueci minha senha.";
+  if(/Database error saving new user|CONVITE_INVALIDO/i.test(m))return"E-mail ou código inválido, ou código vencido. Fale com a T.I.";
+  if(/signups? (are )?not allowed/i.test(m))return"O primeiro acesso está desativado. Fale com a T.I.";
+  if(/rate limit/i.test(m))return"Muitas tentativas. Aguarde alguns minutos e tente de novo.";
+  if(/failed to fetch|network/i.test(m))return"Sem conexão com o servidor. Verifique a internet.";
+  return m||"Não foi possível concluir. Tente de novo."}
+
+/* ---------- Sessao ---------- */
+async function entrarNoSistema(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){S.eu=null;pararTempoReal();mostrar("tela-login");return}
+  const {data,error}=await sb.from("usuarios").select("*").eq("id",session.user.id).maybeSingle();
+  if(error){toast(traduz(error));mostrar("tela-pendente");return}
+  if(!data||!data.ativo){S.eu=null;mostrar("tela-pendente");return}
+  S.eu=data;$("who-nome").textContent=data.nome;$("who-perfil").textContent=PERFIL[data.perfil];
+  S.view=NAVS[data.perfil][0][0];
+  $("titulo-lista").textContent={solicitante:"Meus chamados",gerente:"Chamados da obra"}[data.perfil]||"Chamados";
+  await carregarCentros();
+  mostrar("tela-app");renderNav();irPara(S.view);await carregar();iniciarTempoReal();
+}
+function modoLogin(m){S.cadastro=m;const novo=m!=="entrar";
+  $("l-codigo-w").hidden=!novo;$("l-codigo").required=novo;$("l-senha-ajuda").hidden=!novo;$("l-senha").value="";$("l-codigo").value="";
+  $("l-senha").autocomplete=novo?"new-password":"current-password";$("l-senha-rot").textContent=novo?"Crie sua senha":"Senha";
+  $("login-ajuda").textContent={entrar:"Entre com seu e-mail e senha.",primeiro:"Use o e-mail cadastrado pela T.I. e o código que você recebeu.",senha:"Peça um código novo à T.I. e crie outra senha."}[m];
+  $("l-enviar").textContent={entrar:"Entrar",primeiro:"Criar senha e entrar",senha:"Salvar nova senha"}[m];
+  $("l-primeiro").textContent=m==="primeiro"?"Já tenho senha":"Primeiro acesso";$("l-esqueci").textContent=m==="senha"?"Já tenho senha":"Esqueci minha senha"}
+$("l-primeiro").onclick=()=>modoLogin(S.cadastro==="primeiro"?"entrar":"primeiro");
+$("l-esqueci").onclick=()=>modoLogin(S.cadastro==="senha"?"entrar":"senha");
+$("form-login").addEventListener("submit",async ev=>{ev.preventDefault();const b=$("l-enviar");b.disabled=true;
+  const email=$("l-email").value.trim(),password=$("l-senha").value,codigo=$("l-codigo").value.trim().toUpperCase();
+  try{
+    if(S.cadastro==="primeiro"){const {data,error}=await sb.auth.signUp({email,password,options:{data:{codigo}}});if(error)throw error;
+      if(!data.session){toast("Senha criada. Agora entre com seu e-mail e senha.");modoLogin("entrar");return}}
+    else if(S.cadastro==="senha"){const {data,error}=await sb.rpc("redefinir_senha",{p_email:email,p_codigo:codigo,p_senha:password});if(error)throw error;
+      if(!data){toast("E-mail ou código inválido, ou código vencido. Fale com a T.I.");return}
+      const r=await sb.auth.signInWithPassword({email,password});if(r.error)throw r.error}
+    else{const {error}=await sb.auth.signInWithPassword({email,password});if(error)throw error}
+    modoLogin("entrar");await entrarNoSistema();
+  }catch(e){toast(traduz(e))}finally{b.disabled=false}
+});
+$("p-verificar").onclick=entrarNoSistema;
+
+/* ---------- Dados ---------- */
+async function carregar(){
+  const {data,error}=await sb.from("chamados").select("*").order("criado_em",{ascending:false}).limit(1000);
+  if(error){toast(traduz(error));return}
+  S.chamados=data||[];
+  if(S.eu.perfil==="ti")await carregarUsuarios();
+  await carregarAvisos();
+  renderDados();
+}
+async function carregarCentros(){const {data,error}=await sb.from("centros_custo").select("*").eq("ativo",true).order("codigo");if(error){toast(traduz(error));return}S.centros=data||[];
+  $("n-centro").innerHTML='<option value="">Escolha</option>'+S.centros.map(c=>`<option value="${esc(c.id)}">${esc(c.codigo)} - ${esc(c.nome)}</option>`).join("");
+  const v=$("f-centro").value;$("f-centro").innerHTML='<option value="">Todos</option>'+S.centros.map(c=>`<option value="${esc(c.id)}">${esc(c.codigo)} - ${esc(c.nome)}</option>`).join("");$("f-centro").value=v}
+async function carregarUsuarios(){const [u,g,c]=await Promise.all([sb.from("usuarios").select("*").order("ativo").order("nome"),sb.from("gerente_centros").select("*"),sb.from("convites").select("email,nome,setor,perfil,expira_em,usado_em").order("nome")]);if(!u.error)S.usuarios=u.data||[];if(!g.error)S.gerCentros=g.data||[];
+  if(!c.error){const tem=new Set(S.usuarios.map(x=>x.email.toLowerCase()));S.convites=(c.data||[]).filter(x=>!x.usado_em&&!tem.has(x.email))}}
+function mostrarCodigo(quem,cod){$("cod-quem").textContent=quem;$("cod-valor").textContent=cod;$("dlg-codigo").showModal()}
+async function gerarCodigo(email,quem){const {data,error}=await sb.rpc("gerar_codigo",{p_email:email});if(error){toast(traduz(error));return}mostrarCodigo(quem,data);await carregar()}
+async function carregarAvisos(){const {data,error}=await sb.from("notificacoes").select("*").eq("usuario_id",S.eu.id).order("em",{ascending:false}).limit(50);if(error)return;S.avisos=data||[];renderAvisos()}
+async function carregarEventos(){if(!S.openId)return;const id=S.openId;const [e,a]=await Promise.all([sb.from("chamado_eventos").select("*").eq("chamado_id",id).order("em"),sb.from("chamado_anexos").select("*").eq("chamado_id",id).order("em")]);if(id!==S.openId)return;if(!e.error)S.eventos=e.data||[];if(!a.error)S.anexos=a.data||[];renderDet()}
+let rtT;function aoMudar(){clearTimeout(rtT);rtT=setTimeout(async()=>{await carregar();await carregarEventos()},300)}
+function iniciarTempoReal(){pararTempoReal();S.canal=sb.channel("chamados-ti").on("postgres_changes",{event:"*",schema:"public",table:"chamados"},aoMudar).on("postgres_changes",{event:"INSERT",schema:"public",table:"chamado_eventos"},aoMudar).on("postgres_changes",{event:"*",schema:"public",table:"notificacoes",filter:"usuario_id=eq."+S.eu.id},aoMudar).subscribe()}
+function renderAvisos(){const n=S.avisos.filter(a=>!a.lida).length,b=$("avisos-qtd");b.textContent=n;b.hidden=!n;
+  $("av-lista").innerHTML=S.avisos.length?S.avisos.map(a=>`<button class="aviso ${a.lida?"":"nova"}" type="button" data-aviso="${esc(a.chamado_id)}"><b>${esc(a.titulo)}</b>${a.texto?`<span>${esc(a.texto)}</span>`:""}<small>${esc(fmtDH(a.em))}</small></button>`).join(""):'<p class="muted" style="margin:0">Nenhum aviso por enquanto.</p>'}
+function validarArquivos(fs){if(fs.length>MAX_ARQ)return`Envie no máximo ${MAX_ARQ} arquivos por vez.`;for(const f of fs){if(f.size>MAX_MB*1048576)return`${f.name} passa de ${MAX_MB} MB.`;if(!TIPOS_ARQ.includes(f.type))return`${f.name} não é foto ou PDF.`}return""}
+const nomeSeguro=n=>n.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9._-]+/g,"_").slice(-80)||"arquivo";
+async function enviarArquivos(id,fs){let ok=0;for(const f of fs){
+    const caminho=`${id}/${crypto.randomUUID()}-${nomeSeguro(f.name)}`;
+    const {error}=await sb.storage.from("anexos").upload(caminho,f,{contentType:f.type});
+    if(error){toast(`Não foi possível enviar ${f.name}. ${traduz(error)}`);continue}
+    const r=await sb.rpc("registrar_anexo",{p_id:id,p_nome:f.name,p_caminho:caminho,p_tipo:f.type,p_tamanho:f.size});
+    if(r.error){toast(traduz(r.error));continue}ok++}
+  return ok}
+function pararTempoReal(){if(S.canal){sb.removeChannel(S.canal);S.canal=null}}
+async function acao(nome,args,msg){
+  const {error}=await sb.rpc(nome,args);
+  if(error){toast(traduz(error));return false}
+  if(msg)toast(msg);await carregar();await carregarEventos();return true}
+
+/* ---------- Telas ---------- */
+function renderNav(){const pend=S.chamados.filter(c=>c.status==="aguardando_aprovacao").length;
+  $("nav").innerHTML=NAVS[S.eu.perfil].map(([v,n])=>`<button class="nav-btn" data-view="${v}" type="button" ${v===S.view?'aria-current="page"':""}>${esc(n)}${v==="autorizacoes"&&pend?`<span class="badge">${pend}</span>`:""}</button>`).join("");
+  document.title=(S.eu.perfil==="diretor"&&pend?`(${pend}) `:"")+"Chamados de T.I."}
+function irPara(v){S.view=v;["painel","autorizacoes","chamados","usuarios"].forEach(x=>$("v-"+x).hidden=x!==v);renderNav()}
+function tabela(L){return`<div class="table-wrap"><table><thead><tr><th>Protocolo</th><th>Assunto</th><th>Tipo</th><th>Centro de custo</th><th>Solicitante</th><th>Responsável</th><th>Etapa</th><th>Prioridade</th><th>Aberto em</th></tr></thead><tbody>
+${L.map(t=>`<tr data-id="${esc(t.id)}"><td><button class="proto" type="button" data-open="${esc(t.id)}">${esc(t.protocolo)}</button></td><td><b style="font-weight:600">${esc(t.assunto)}</b></td><td>${esc(t.tipo)}</td><td>${esc(t.centro_nome)}</td><td>${esc(t.solicitante_nome)}</td><td>${t.responsavel_nome?esc(t.responsavel_nome):'<span class="muted">Sem responsável</span>'}</td><td>${pEtapa(t.status)}</td><td>${pPrio(t.prioridade)}</td><td class="nowrap">${esc(fmtD(t.criado_em))}</td></tr>`).join("")}</tbody></table></div>`}
+function vazio(tit,txt,novo){return`<div class="card"><div class="empty"><b>${esc(tit)}</b><span>${esc(txt)}</span>${novo?'<button class="btn primary" type="button" data-act="novo">Abrir chamado</button>':""}</div></div>`}
+function renderPainel(){const T=S.chamados,ag=new Date(),ini=new Date(ag.getFullYear(),ag.getMonth(),1).toISOString();
+  const abertos=T.filter(t=>!FECHADOS.includes(t.status));
+  const tiles=[["Aguardando a T.I.",T.filter(t=>t.status==="aberto").length,"aberto"],["Aguardando autorização",T.filter(t=>t.status==="aguardando_aprovacao").length,"aguardando_aprovacao"],["Em execução",T.filter(t=>t.status==="em_execucao").length,"em_execucao"],["Realizados no mês",T.filter(t=>t.status==="realizado"&&(t.encerrado_em||"")>=ini).length,"realizado"]];
+  $("tiles").innerHTML=tiles.map(x=>`<button class="tile" type="button" data-filtro="${x[2]}"><span>${esc(x[0])}</span><b>${x[1]}</b></button>`).join("");
+  if(!T.length){$("painel-body").innerHTML=vazio("Nenhum chamado por enquanto","Quando alguém abrir um chamado, ele aparece aqui.");return}
+  const meses=[];for(let i=5;i>=0;i--){const d=new Date(ag.getFullYear(),ag.getMonth()-i,1);meses.push({k:ymd(d).slice(0,7),n:d.toLocaleDateString("pt-BR",{month:"short"}).replace(".",""),c:0,full:d.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})})}
+  T.forEach(t=>{const m=meses.find(x=>x.k===ymd(new Date(t.criado_em)).slice(0,7));if(m)m.c++});
+  const max=Math.max(1,...meses.map(m=>m.c));
+  const porTipo=TIPOS.map(n=>({n,c:abertos.filter(t=>t.tipo===n).length})).filter(x=>x.c).sort((a,b)=>b.c-a.c),maxT=Math.max(1,...porTipo.map(x=>x.c));
+  $("painel-body").innerHTML=`<div class="cols"><div class="card"><h2>Chamados abertos por mês</h2><div class="bars">${meses.map(m=>`<div class="bar-col" tabindex="0" data-tip="${esc(m.full)}: ${m.c} chamado${m.c===1?"":"s"}"><span>${m.c}</span><i style="height:${m.c?Math.max(4,m.c/max*85):0}%"></i></div>`).join("")}</div><div class="months">${meses.map(m=>`<span>${esc(m.n)}</span>`).join("")}</div></div>
+  <div class="card"><h2>Em aberto por tipo</h2>${porTipo.length?porTipo.map(x=>`<div class="hbar" data-tip="${esc(x.n)}: ${x.c}"><label>${esc(x.n)}</label><div class="track"><i style="width:${x.c/maxT*100}%"></i></div><b>${x.c}</b></div>`).join(""):'<p class="muted" style="margin:0">Nenhum chamado em aberto.</p>'}</div></div>
+  <div><h2 style="font-size:15px;font-weight:600;margin-bottom:8px">Últimos chamados</h2>${tabela(T.slice(0,5))}</div>`}
+function filtrados(){const de=$("f-de").value,ate=$("f-ate").value,st=$("f-status").value,pr=$("f-prio").value,ti=$("f-tipo").value,cc=$("f-centro").value,b=$("f-busca").value.trim().toLowerCase();
+  return S.chamados.filter(t=>{const d=ymd(new Date(t.criado_em));if(de&&d<de)return false;if(ate&&d>ate)return false;
+    if(st==="andamento"){if(FECHADOS.includes(t.status))return false}else if(st&&t.status!==st)return false;
+    if(pr&&t.prioridade!==pr)return false;if(ti&&t.tipo!==ti)return false;if(cc&&t.centro_custo_id!==cc)return false;
+    if(b&&![t.protocolo,t.assunto,t.centro_nome,t.patrimonio,t.tipo,t.descricao].join(" ").toLowerCase().includes(b))return false;return true})}
+function renderLista(){const L=filtrados(),n=S.chamados.length;$("contagem").textContent=n?`${L.length} de ${n} chamado${n===1?"":"s"}`:"";
+  $("lista").innerHTML=!n?vazio("Nenhum chamado por enquanto",S.eu.perfil==="solicitante"?"Abra um chamado e acompanhe aqui cada etapa.":"Os chamados abertos aparecem aqui.",true):L.length?tabela(L):vazio("Nenhum chamado com esses filtros","Mude ou limpe os filtros.")}
+function renderAut(){const L=S.chamados.filter(c=>c.status==="aguardando_aprovacao");$("lista-aut").innerHTML=L.length?tabela(L):vazio("Nenhuma autorização pendente","Quando a T.I. pedir sua aprovação, o chamado aparece aqui.")}
+function renderUsuarios(){if(!S.eu||S.eu.perfil!=="ti")return;
+  const cv=S.convites||[];$("lista-convites").innerHTML=cv.length?`<div class="card" style="margin-bottom:12px"><h2>Aguardando o primeiro acesso</h2>${cv.map(c=>`<div class="user-row"><div style="min-width:0"><b style="font-weight:600">${esc(c.nome)}</b><br><small class="muted" style="overflow-wrap:anywhere">${esc(c.email)}</small></div><div>${new Date(c.expira_em)<new Date()?'<span class="pill c-red">Código vencido</span>':`<span class="pill c-amber">Vale até ${esc(fmtD(c.expira_em))}</span>`}</div><span class="muted">${esc(PERFIL[c.perfil]||c.perfil)}</span>${c.perfil==="diretor"?"<span></span>":`<button class="btn" type="button" data-cod="${esc(c.email)}" data-quem="${esc(c.nome)}">Gerar novo código</button>`}</div>`).join("")}</div>`:"";
+  $("lista-usuarios").innerHTML=S.usuarios.map(u=>{const dir=u.perfil==="diretor",eu=u.id===S.eu.id;
+    return`<div class="user-row" data-user="${esc(u.id)}"><div style="min-width:0"><b style="font-weight:600">${esc(u.nome)}</b><br><small class="muted" style="overflow-wrap:anywhere">${esc(u.email)}${u.setor?" · "+esc(u.setor):""}</small></div>
+    <div>${u.ativo?'<span class="pill c-green">Liberado</span>':'<span class="pill c-amber">Aguardando liberação</span>'}</div>
+    ${dir?'<span class="muted">Diretor</span>':`<select aria-label="Perfil de ${esc(u.nome)}" data-perfil ${eu?"disabled":""}><option value="solicitante" ${u.perfil==="solicitante"?"selected":""}>Funcionário</option><option value="gerente" ${u.perfil==="gerente"?"selected":""}>Gerente de obra</option><option value="ti" ${u.perfil==="ti"?"selected":""}>T.I.</option></select>`}
+    ${dir||eu?"<span></span>":`<div class="btns">${u.perfil==="gerente"?`<button class="btn" type="button" data-gc>Centros de custo (${S.gerCentros.filter(g=>g.usuario_id===u.id).length})</button>`:""}<button class="btn" type="button" data-cod="${esc(u.email)}" data-quem="${esc(u.nome)}">Código de senha</button><button class="btn" type="button" data-ativar="${u.ativo?"0":"1"}">${u.ativo?"Bloquear":"Liberar"}</button></div>`}</div>`}).join("")||'<p class="muted">Nenhum usuário.</p>'}
+
+function passos(t,evs){
+  const quando=s=>{const e=evs.find(x=>x.para_status===s);return e?fmtD(e.em):""};
+  const st=t.status,ordem={aberto:0,em_analise:1,aguardando_aprovacao:2,aprovado:3,reprovado:2,em_execucao:3,realizado:4,cancelado:-1};
+  let at=ordem[st]??0;
+  if(st==="cancelado"){const u=[...evs].reverse().find(e=>e.para_status==="cancelado");at={aberto:0,em_analise:1,aguardando_aprovacao:2,aprovado:3}[u&&u.de_status]??0}
+  const fechou=st==="realizado";
+  const semAut=!t.precisou_autorizacao&&at>=3;
+  const P=[["Aberto",quando("aberto")],["Análise da T.I.",quando("em_analise")],["Autorização do diretor",semAut?"Não precisou":(quando("aprovado")||quando("reprovado"))],["Execução",quando("em_execucao")],["Realizado",quando("realizado")]];
+  return P.map((p,i)=>{let c="",m=String(i+1);
+    if(i<at||(fechou&&i===at)){c="done";m="✓"}else if(i===at){c=(st==="reprovado"||st==="cancelado")?"fail":"now";if(c==="fail")m="×"}
+    if(i===2&&semAut){c="done skip";m="–"}
+    return`<li class="step ${c}" ${i===at&&!fechou?'aria-current="step"':""}><i>${m}</i><b>${esc(p[0])}</b><small>${esc(p[1])}</small></li>`}).join("")}
+function caixaAcao(t){const p=S.eu.perfil,s=t.status;let tit="",txt="",ph="",btn="",ajuda="";
+  if(p==="ti"){
+    if(s==="aberto"){tit="Próximo passo da T.I.";ajuda="Ao iniciar a análise, você passa a ser o responsável.";btn=`<button class="btn primary" data-do="analise" type="button">Iniciar análise</button>`}
+    if(s==="em_analise"){tit="Resultado da análise";txt="Justificativa ou observação";ph="Para pedir autorização, explique o que é necessário e por quê.";btn=`<button class="btn primary" data-do="pedir" type="button">Pedir autorização ao diretor</button><button class="btn" data-do="direto" type="button">Seguir sem autorização</button>`}
+    if(s==="aguardando_aprovacao"){tit="Aguardando o diretor";ajuda="A T.I. só avança depois da aprovação."}
+    if(s==="aprovado"){tit="Diretor aprovou";txt="Observação (opcional)";btn=`<button class="btn primary" data-do="executar" type="button">Iniciar execução</button>`}
+    if(s==="em_execucao"){tit="Execução em andamento";txt="O que foi realizado";ph="Descreva o que foi feito. Quem abriu o chamado verá este texto.";btn=`<button class="btn primary" data-do="concluir" type="button">Informar que foi realizado</button>`}
+  }
+  if(p==="diretor"&&s==="aguardando_aprovacao"){tit="Sua decisão";txt="Parecer";ph="Opcional para aprovar. Obrigatório para reprovar.";btn=`<button class="btn primary" data-do="aprovar" type="button">Aprovar</button><button class="btn danger" data-do="reprovar" type="button">Reprovar</button>`}
+  if(!tit)return"";
+  return`<div class="acao"><h3>${esc(tit)}</h3>${ajuda?`<p>${esc(ajuda)}</p>`:""}${txt?`<div class="field"><label for="a-texto">${esc(txt)}</label><textarea id="a-texto" maxlength="2000" style="min-height:70px" placeholder="${esc(ph)}"></textarea></div>`:""}${btn?`<div class="btns">${btn}</div>`:""}</div>`}
+function renderDet(){const id=S.openId;if(!id)return;const t=S.chamados.find(c=>c.id===id);if(!t){fecharDet();return}
+  $("det-titulo").textContent=`${t.protocolo} · ${t.assunto}`;
+  $("det-steps").innerHTML=passos(t,S.eventos);
+  const prev=$("a-texto")?$("a-texto").value:"",html=caixaAcao(t);
+  if($("det-acao").dataset.k!==t.status+"|"+S.eu.perfil){$("det-acao").innerHTML=html;$("det-acao").dataset.k=t.status+"|"+S.eu.perfil}else if($("a-texto"))$("a-texto").value=prev;
+  $("det-info").innerHTML=`<div class="btns" style="align-items:center">${pEtapa(t.status)} ${pPrio(t.prioridade)}</div><div class="desc">${esc(t.descricao)}</div>
+  <dl class="meta"><div><dt>Tipo</dt><dd>${esc(t.tipo)}</dd></div><div><dt>Centro de custo</dt><dd>${esc(t.centro_nome)}</dd></div><div><dt>Solicitante</dt><dd>${esc(t.solicitante_nome)}</dd></div><div><dt>Contato</dt><dd>${esc(t.contato)||"Não informado"}</dd></div><div><dt>Equipamento ou patrimônio</dt><dd>${esc(t.patrimonio)||"Não informado"}</dd></div><div><dt>Responsável</dt><dd>${esc(t.responsavel_nome)||"Sem responsável"}</dd></div></dl>`;
+  $("det-anexos").innerHTML=S.anexos.length?S.anexos.map(a=>`<li><button class="proto" type="button" data-anexo="${esc(a.caminho)}" style="font-family:inherit;white-space:normal;overflow-wrap:anywhere;text-align:left">${esc(a.nome)}</button><small>${esc(fmtTam(a.tamanho))} · ${esc(a.por_nome)}</small></li>`).join(""):'<li class="muted">Nenhum arquivo anexado.</li>';
+  $("det-enviar").hidden=FECHADOS.includes(t.status);
+  $("det-tl").innerHTML=S.eventos.map(e=>`<li class="${e.tipo==="mensagem"?"msg":""}"><span class="when">${esc(fmtDH(e.em))} · ${esc(e.por_nome)} (${esc(PERFIL[e.por_perfil]||e.por_perfil)})</span><p><b style="font-weight:600">${esc(e.tipo==="mensagem"?"":e.titulo)}</b>${e.tipo!=="mensagem"&&e.texto?"\n":""}${esc(e.texto||"")}</p></li>`).join("");
+  const fechado=FECHADOS.includes(t.status),podeCancelar=!fechado&&t.status!=="em_execucao"&&(S.eu.perfil==="ti"||t.solicitante_id===S.eu.id);
+  $("det-cancelar").hidden=!podeCancelar;$("form-msg").hidden=fechado}
+function renderDados(){renderNav();renderPainel();renderLista();renderAut();renderUsuarios();renderDet()}
+async function abrirDet(id){S.openId=id;S.eventos=[];S.anexos=[];$("det-acao").dataset.k="";$("x-motivo").value="";$("m-texto").value="";$("d-arquivos").value="";$("det-cancelar").open=false;renderDet();$("dlg-det").showModal();await carregarEventos();
+  if(S.avisos.some(a=>a.chamado_id===id&&!a.lida)){await sb.rpc("marcar_avisos_lidos",{p_chamado:id});await carregarAvisos()}}
+function fecharDet(){S.openId=null;if($("dlg-det").open)$("dlg-det").close()}
+
+/* ---------- Eventos ---------- */
+function abrirNovo(){$("form-novo").reset();$("n-prio").value="Média";ajudaNovo();$("dlg-novo").showModal();$("n-assunto").focus()}
+function ajudaNovo(){$("n-prio-ajuda").textContent=AJUDA_PRIO[$("n-prio").value]||"";$("n-desc").placeholder=DICA[$("n-tipo").value]||"Explique o que está acontecendo ou o que você precisa."}
+$("btn-novo-side").onclick=abrirNovo;
+$("form-novo").addEventListener("submit",async ev=>{ev.preventDefault();
+  const fs=[...$("n-arquivos").files],inv=validarArquivos(fs);if(inv){toast(inv);return}
+  const b=$("n-enviar");b.disabled=true;
+  const {data,error}=await sb.rpc("abrir_chamado",{p_tipo:$("n-tipo").value,p_assunto:$("n-assunto").value,p_descricao:$("n-desc").value,p_centro:$("n-centro").value,p_contato:$("n-contato").value,p_patrimonio:$("n-patrimonio").value,p_prioridade:$("n-prio").value});
+  if(error){b.disabled=false;toast(traduz(error));return}
+  const ok=await enviarArquivos(data.id,fs);b.disabled=false;
+  $("dlg-novo").close();toast(ok<fs.length?`Chamado ${data.protocolo} aberto, mas ${fs.length-ok} arquivo(s) não foram enviados. Tente de novo no chamado.`:`Chamado aberto. Protocolo ${data.protocolo}`);await carregar();abrirDet(data.id)});
+$("d-arquivos").addEventListener("change",async e=>{const fs=[...e.target.files],inv=validarArquivos(fs);if(inv){toast(inv);e.target.value="";return}if(!fs.length)return;
+  e.target.disabled=true;const ok=await enviarArquivos(S.openId,fs);e.target.disabled=false;e.target.value="";if(ok)toast(ok===1?"Arquivo enviado.":`${ok} arquivos enviados.`);await carregarEventos()});
+$("btn-avisos").onclick=()=>{renderAvisos();$("dlg-avisos").showModal()};
+$("av-todos").onclick=async()=>{await sb.rpc("marcar_avisos_lidos",{p_chamado:null});await carregarAvisos()};
+$("form-usuario").addEventListener("submit",async ev=>{ev.preventDefault();const nome=$("u-nome").value.trim();
+  const {data,error}=await sb.rpc("cadastrar_usuario",{p_email:$("u-email").value,p_nome:nome,p_setor:$("u-setor").value,p_perfil:$("u-perfil").value});
+  if(error){toast(traduz(error));return}$("form-usuario").reset();mostrarCodigo(nome,data);await carregar()});
+$("cod-copiar").onclick=async()=>{try{await navigator.clipboard.writeText($("cod-valor").textContent);toast("Código copiado.")}catch(e){toast("Selecione e copie o código manualmente.")}};
+$("form-centro").addEventListener("submit",async ev=>{ev.preventDefault();if(await acao("adicionar_centro",{p_codigo:$("cc-codigo").value,p_nome:$("cc-nome").value},"Centro de custo adicionado.")){$("form-centro").reset();await carregarCentros()}});
+$("form-gc").addEventListener("submit",async ev=>{ev.preventDefault();const ids=[...document.querySelectorAll("#gc-lista input:checked")].map(i=>i.value);$("dlg-centros").close();await acao("definir_centros_gerente",{p_id:S.gcUser,p_centros:ids},"Centros de custo salvos.")});
+$("form-msg").addEventListener("submit",async ev=>{ev.preventDefault();if(await acao("comentar_chamado",{p_id:S.openId,p_texto:$("m-texto").value},null))$("m-texto").value=""});
+$("x-enviar").onclick=async()=>{const m=$("x-motivo").value;if(!m.trim()){toast("Escreva o motivo do cancelamento.");return}if(await acao("cancelar_chamado",{p_id:S.openId,p_motivo:m},"Chamado cancelado."))$("x-motivo").value=""};
+document.addEventListener("click",async e=>{
+  if(e.target.closest("[data-sair]")){await sb.auth.signOut();S.chamados=[];await entrarNoSistema();return}
+  const c=e.target.closest("[data-close]");if(c){const d=c.closest("dialog");if(d.id==="dlg-det")fecharDet();else d.close();return}
+  const a=e.target.closest("[data-act]");if(a){abrirNovo();return}
+  const d=e.target.closest("[data-do]");if(d){const k=d.dataset.do,id=S.openId,x=$("a-texto")?$("a-texto").value:"";d.disabled=true;
+    const M={analise:["iniciar_analise",{p_id:id},"Análise iniciada."],pedir:["pedir_autorizacao",{p_id:id,p_justificativa:x},"Pedido enviado ao diretor."],direto:["seguir_sem_autorizacao",{p_id:id,p_texto:x},"Execução iniciada."],executar:["iniciar_execucao",{p_id:id,p_texto:x},"Execução iniciada."],concluir:["concluir_chamado",{p_id:id,p_texto:x},"Chamado marcado como realizado."],aprovar:["decidir_autorizacao",{p_id:id,p_aprovado:true,p_parecer:x},"Chamado aprovado."],reprovar:["decidir_autorizacao",{p_id:id,p_aprovado:false,p_parecer:x},"Chamado reprovado."]}[k];
+    await acao(...M);d.disabled=false;return}
+  const an=e.target.closest("[data-anexo]");if(an){const w=window.open("about:blank");const {data,error}=await sb.storage.from("anexos").createSignedUrl(an.dataset.anexo,300);if(error){if(w)w.close();toast(traduz(error));return}if(w)w.location=data.signedUrl;else location.href=data.signedUrl;return}
+  const av=e.target.closest("[data-aviso]");if(av){$("dlg-avisos").close();if(!S.chamados.some(c=>c.id===av.dataset.aviso)){toast("Este chamado não está mais disponível para você.");return}if($("dlg-det").open)fecharDet();abrirDet(av.dataset.aviso);return}
+  const cd=e.target.closest("[data-cod]");if(cd){await gerarCodigo(cd.dataset.cod,cd.dataset.quem);return}
+  const gc=e.target.closest("[data-gc]");if(gc){const uid=gc.closest("[data-user]").dataset.user,tem=S.gerCentros.filter(g=>g.usuario_id===uid).map(g=>g.centro_id);S.gcUser=uid;
+    $("gc-lista").innerHTML=S.centros.map(c=>`<label><input type="checkbox" value="${esc(c.id)}" ${tem.includes(c.id)?"checked":""}><span>${esc(c.codigo)} - ${esc(c.nome)}</span></label>`).join("");$("dlg-centros").showModal();return}
+  const at=e.target.closest("[data-ativar]");if(at){const r=at.closest("[data-user]"),u=S.usuarios.find(z=>z.id===r.dataset.user);await acao("atualizar_usuario",{p_id:u.id,p_perfil:u.perfil,p_ativo:at.dataset.ativar==="1"},at.dataset.ativar==="1"?"Conta liberada.":"Conta bloqueada.");return}
+  const o=e.target.closest("[data-open]");if(o){abrirDet(o.dataset.open);return}
+  const tr=e.target.closest("tbody tr[data-id]");if(tr){abrirDet(tr.dataset.id);return}
+  const fi=e.target.closest("[data-filtro]");if(fi){limpar();$("f-status").value=fi.dataset.filtro;renderLista();irPara("chamados");return}
+  const n=e.target.closest(".nav-btn");if(n){irPara(n.dataset.view);return}
+});
+document.addEventListener("change",async e=>{
+  if(e.target.id==="n-tipo"||e.target.id==="n-prio")ajudaNovo();
+  if(e.target.matches("[data-perfil]")){const r=e.target.closest("[data-user]"),u=S.usuarios.find(z=>z.id===r.dataset.user);await acao("atualizar_usuario",{p_id:u.id,p_perfil:e.target.value,p_ativo:u.ativo},"Perfil alterado.")}
+});
+$("dlg-det").addEventListener("close",()=>{if(!$("dlg-det").open)S.openId=null});
+["f-de","f-ate","f-status","f-prio","f-tipo","f-centro"].forEach(i=>$(i).addEventListener("change",renderLista));
+$("f-busca").addEventListener("input",renderLista);
+function limpar(){["f-de","f-ate","f-busca","f-status","f-prio","f-tipo","f-centro"].forEach(i=>$(i).value="");renderLista()}
+$("btn-limpar").onclick=limpar;
+const csvCel=v=>{let s=String(v??"");if(/^[=+\-@]/.test(s))s="'"+s;return'"'+s.replace(/"/g,'""')+'"'};
+$("btn-csv").onclick=()=>{const L=filtrados();if(!L.length){toast("Não há chamados para exportar com esses filtros.");return}
+  const cab=["Protocolo","Assunto","Tipo","Centro de custo","Solicitante","Contato","Equipamento ou patrimônio","Responsável","Etapa","Prioridade","Aberto em","Encerrado em","Descrição"];
+  const l=L.map(t=>[t.protocolo,t.assunto,t.tipo,t.centro_nome,t.solicitante_nome,t.contato,t.patrimonio,t.responsavel_nome,(ETAPA[t.status]||[t.status])[0],t.prioridade,fmtDH(t.criado_em),fmtDH(t.encerrado_em),t.descricao].map(csvCel).join(";"));
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+[cab.map(csvCel).join(";"),...l].join("\r\n")],{type:"text/csv;charset=utf-8"}));a.download=`chamados-ti-${ymd(new Date())}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+const tip=$("tip");function mostraTip(el){const r=el.getBoundingClientRect();tip.textContent=el.dataset.tip;tip.hidden=false;const w=tip.offsetWidth;tip.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2))+"px";tip.style.top=Math.max(8,r.top-30)+"px"}
+document.addEventListener("mouseover",e=>{const t=e.target.closest("[data-tip]");if(t)mostraTip(t);else tip.hidden=true});
+
+function preencher(id,ops,todos){$(id).innerHTML=(todos?`<option value="">${todos}</option>`:"")+ops.map(o=>Array.isArray(o)?`<option value="${esc(o[0])}">${esc(o[1])}</option>`:`<option>${esc(o)}</option>`).join("")}
+preencher("f-status",[["andamento","Em andamento (todos)"],...Object.entries(ETAPA).map(([k,v])=>[k,v[0]])],"Todas");preencher("f-prio",Object.keys(PRIOS),"Todas");preencher("f-tipo",TIPOS,"Todos");preencher("n-tipo",TIPOS);preencher("n-prio",Object.keys(PRIOS));
+modoLogin("entrar");
+sb.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_OUT"){S.eu=null;pararTempoReal();fecharDet();mostrar("tela-login")}});
+entrarNoSistema().catch(e=>{toast(traduz(e));mostrar("tela-login")});
+</script></body></html>
