@@ -157,6 +157,8 @@ details summary{cursor:pointer;color:var(--muted)}
 .user-row:first-child{border-top:0}
 .user-row select{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
 @media(max-width:640px){.user-row{grid-template-columns:minmax(0,1fr)}}
+.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:560px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .anexos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .anexos li{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .anexos small{color:var(--muted)}
@@ -294,7 +296,7 @@ const AJUDA_PRIO={"Baixa":"Pode esperar alguns dias.","Média":"Atrapalha, mas d
 const DICA={"Novo equipamento":"Diga qual equipamento precisa, para quem e por quê.","Manutenção de equipamento":"Diga o que aconteceu, desde quando e se aparece alguma mensagem de erro."};
 const PERFIL={solicitante:"Funcionário",gerente:"Gerente de obra",ti:"T.I.",diretor:"Diretor",admin:"Administrador"};
 const gereUsuarios=()=>S.eu&&["ti","admin"].includes(S.eu.perfil);
-const NAVS={solicitante:[["chamados","Meus chamados"]],gerente:[["chamados","Chamados da obra"],["painel","Painel"]],ti:[["autorizacoes","Pendentes"],["painel","Painel"],["chamados","Chamados"],["usuarios","Usuários"]],diretor:[["autorizacoes","Autorizações"],["painel","Painel"],["chamados","Chamados"]],admin:[["autorizacoes","Pendentes"],["painel","Painel"],["chamados","Chamados"],["usuarios","Usuários"]]};
+const NAVS={solicitante:[["chamados","Meus chamados"]],gerente:[["chamados","Chamados da obra"]],ti:[["autorizacoes","Pendentes"],["painel","Painel"],["chamados","Chamados"],["usuarios","Usuários"]],diretor:[["autorizacoes","Autorizações"],["painel","Painel"],["chamados","Chamados"]],admin:[["autorizacoes","Pendentes"],["painel","Painel"],["chamados","Chamados"],["usuarios","Usuários"]]};
 const ETAPAS_TI=["aberto","em_analise","aprovado","em_execucao"];
 function pendentes(){const p=S.eu&&S.eu.perfil,t=S.chamados;
   if(p==="diretor")return t.filter(c=>c.status==="aguardando_aprovacao");
@@ -409,7 +411,8 @@ ${L.map(t=>`<tr data-id="${esc(t.id)}"><td><button class="proto" type="button" d
 function vazio(tit,txt,novo){return`<div class="card"><div class="empty"><b>${esc(tit)}</b><span>${esc(txt)}</span>${novo?'<button class="btn primary" type="button" data-act="novo">Abrir chamado</button>':""}</div></div>`}
 function renderPainel(){const T=S.chamados,ag=new Date(),ini=new Date(ag.getFullYear(),ag.getMonth(),1).toISOString();
   const abertos=T.filter(t=>!FECHADOS.includes(t.status));
-  const tiles=[["Aguardando a T.I.",T.filter(t=>t.status==="aberto").length,"aberto"],["Aguardando autorização",T.filter(t=>t.status==="aguardando_aprovacao").length,"aguardando_aprovacao"],["Em execução",T.filter(t=>t.status==="em_execucao").length,"em_execucao"],["Realizados no mês",T.filter(t=>t.status==="realizado"&&(t.encerrado_em||"")>=ini).length,"realizado"]];
+  const qtd=s=>T.filter(t=>t.status===s).length;
+  const tiles=[["Abertos, aguardando a T.I.",qtd("aberto"),"aberto"],["Em análise pela T.I.",qtd("em_analise"),"em_analise"],["Aguardando aprovação do diretor",qtd("aguardando_aprovacao"),"aguardando_aprovacao"],["Aprovados, a executar",qtd("aprovado"),"aprovado"],["Em execução pela T.I.",qtd("em_execucao"),"em_execucao"],["Realizados no mês",T.filter(t=>t.status==="realizado"&&(t.encerrado_em||"")>=ini).length,"realizado"]];
   $("tiles").innerHTML=tiles.map(x=>`<button class="tile" type="button" data-filtro="${x[2]}"><span>${esc(x[0])}</span><b>${x[1]}</b></button>`).join("");
   if(!T.length){$("painel-body").innerHTML=vazio("Nenhum chamado por enquanto","Quando alguém abrir um chamado, ele aparece aqui.");return}
   const meses=[];for(let i=5;i>=0;i--){const d=new Date(ag.getFullYear(),ag.getMonth()-i,1);meses.push({k:ymd(d).slice(0,7),n:d.toLocaleDateString("pt-BR",{month:"short"}).replace(".",""),c:0,full:d.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})})}
