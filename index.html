@@ -310,7 +310,7 @@ function resumoPrazo(){if(!vePrazo())return"";const T=S.chamados.map(t=>situacao
   if(!T.length)return"";
   return`<div class="card"><h2>Prazos de atendimento</h2><p style="margin:0">${fe.length?`<b>${Math.round(ok/fe.length*100)}%</b> feitos no prazo (${ok} de ${fe.length}). `:"Nenhum chamado com prazo foi concluído ainda. "}<b>${at}</b> em aberto com prazo vencido.</p></div>`}
 function renderPrazo(t){const box=$("det-prazo");if(!vePrazo()){box.innerHTML="";return}
-  const p=S.prazos[t.id],fechado=FECHADOS.includes(t.status),edita=gereUsuarios()&&!fechado,k=JSON.stringify([p&&p.atualizado_em,t.status,S.eu.perfil]);
+  const p=S.prazos[t.id],fechado=FECHADOS.includes(t.status),edita=["aprovado","em_execucao"].includes(t.status)&&(S.eu.perfil==="admin"||(S.eu.perfil==="ti"&&!t.precisou_autorizacao)),k=JSON.stringify([p&&p.atualizado_em,t.status,S.eu.perfil]);
   if(box.dataset.k===k)return;box.dataset.k=k;const s=situacaoPrazo(t),h=p?p.historico||[]:[];
   box.innerHTML=`<div class="ti-box"><h3>Prazo de atendimento</h3><p class="muted" style="margin:0">Visível só para T.I., diretor e administrador.</p>
   ${p?`<div class="btns" style="align-items:center"><b>${esc(fmtPrazo(p.prazo))}</b>${s?`<span class="pill ${s.c}">${esc(s.txt)}</span>`:""}</div>`:`<p style="margin:0">${fechado?"Nenhum prazo foi definido.":"Prazo ainda não definido."}</p>`}
@@ -333,7 +333,7 @@ const pEtapa=s=>{const e=ETAPA[s]||[s,"c-gray"];return`<span class="pill ${e[1]}
 const pPrio=p=>`<span class="pill ${PRIOS[p]||"c-gray"}">${esc(p)}</span>`;
 let toastT;function toast(m){const e=$("toast");e.textContent=m;e.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>e.hidden=true,5000)}
 
-const S={prazos:{},eu:null,chamados:[],eventos:[],anexos:[],usuarios:[],centros:[],gerCentros:[],avisos:[],view:"chamados",openId:null,cadastro:false,canal:null,gcUser:null};
+const S={prazos:{},notas:{},eu:null,chamados:[],eventos:[],anexos:[],usuarios:[],centros:[],gerCentros:[],avisos:[],view:"chamados",openId:null,cadastro:false,canal:null,gcUser:null};
 const MAX_ARQ=5,MAX_MB=10,TIPOS_ARQ=["image/jpeg","image/png","image/webp","image/heic","image/heif","application/pdf"];
 const fmtTam=b=>b>=1048576?(b/1048576).toLocaleString("pt-BR",{maximumFractionDigits:1})+" MB":Math.max(1,Math.round(b/1024))+" KB";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -402,7 +402,7 @@ async function carregarUsuarios(){const [u,g,c]=await Promise.all([sb.from("usua
 function mostrarCodigo(quem,cod){$("cod-quem").textContent=quem;$("cod-valor").textContent=cod;$("dlg-codigo").showModal()}
 async function gerarCodigo(email,quem){const {data,error}=await sb.rpc("gerar_codigo",{p_email:email});if(error){toast(traduz(error));return}mostrarCodigo(quem,data);await carregar()}
 async function carregarAvisos(){const {data,error}=await sb.from("notificacoes").select("*").eq("usuario_id",S.eu.id).order("em",{ascending:false}).limit(50);if(error)return;S.avisos=data||[];renderAvisos()}
-async function carregarEventos(){if(!S.openId)return;const id=S.openId;const [e,a]=await Promise.all([sb.from("chamado_eventos").select("*").eq("chamado_id",id).order("em"),sb.from("chamado_anexos").select("*").eq("chamado_id",id).order("em")]);if(id!==S.openId)return;if(!e.error)S.eventos=e.data||[];if(!a.error)S.anexos=a.data||[];renderDet()}
+async function carregarEventos(){if(!S.openId)return;const id=S.openId;const [e,a]=await Promise.all([sb.from("chamado_eventos").select("*").eq("chamado_id",id).order("em"),sb.from("chamado_anexos").select("*").eq("chamado_id",id).order("em")]);if(id!==S.openId)return;if(!e.error)S.eventos=e.data||[];if(!a.error)S.anexos=a.data||[];S.notas={};if(vePrazo()){const nt=await sb.from("chamado_notas").select("*").eq("chamado_id",id);if(id!==S.openId)return;if(!nt.error)S.notas=Object.fromEntries((nt.data||[]).map(x=>[x.evento_id,x.texto]))}renderDet()}
 let rtT;function aoMudar(){clearTimeout(rtT);rtT=setTimeout(async()=>{await carregar();await carregarEventos()},300)}
 function iniciarTempoReal(){pararTempoReal();S.canal=sb.channel("chamados-ti").on("postgres_changes",{event:"*",schema:"public",table:"chamados"},aoMudar).on("postgres_changes",{event:"INSERT",schema:"public",table:"chamado_eventos"},aoMudar).on("postgres_changes",{event:"*",schema:"public",table:"notificacoes",filter:"usuario_id=eq."+S.eu.id},aoMudar).subscribe()}
 function renderAvisos(){const n=S.avisos.filter(a=>!a.lida).length,b=$("avisos-qtd");b.textContent=n;b.hidden=!n;
@@ -472,17 +472,17 @@ function passos(t,evs){
     if(i<at||(fechou&&i===at)){c="done";m="✓"}else if(i===at){c=(st==="reprovado"||st==="cancelado")?"fail":"now";if(c==="fail")m="×"}
     if(i===2&&semAut){c="done skip";m="–"}
     return`<li class="step ${c}" ${i===at&&!fechou?'aria-current="step"':""}><i>${m}</i><b>${esc(p[0])}</b><small>${esc(p[1])}</small></li>`}).join("")}
-function caixaAcao(t){const p=S.eu.perfil,s=t.status;let tit="",txt="",ph="",btn="",ajuda="";
+function caixaAcao(t){const p=S.eu.perfil,s=t.status;let tit="",txt="",ph="",btn="",ajuda="",pz="";
   if(p==="ti"||p==="admin"){
     if(s==="aberto"){tit="Próximo passo da T.I.";ajuda="Ao iniciar a análise, você passa a ser o responsável.";btn=`<button class="btn primary" data-do="analise" type="button">Iniciar análise</button>`}
-    if(s==="em_analise"){tit="Resultado da análise";txt="Justificativa ou observação";ph="Para pedir autorização, explique o que é necessário e por quê.";btn=`<button class="btn primary" data-do="pedir" type="button">Pedir autorização ao diretor</button><button class="btn" data-do="direto" type="button">Seguir sem autorização</button>`}
+    if(s==="em_analise"){tit="Resultado da análise";pz="Prazo para execução";txt="Justificativa ou observação (só T.I. e diretor veem)";ph="Para pedir autorização, explique o que é necessário e por quê.";btn=`<button class="btn primary" data-do="pedir" type="button">Pedir autorização ao diretor</button><button class="btn" data-do="direto" type="button">Seguir sem autorização</button>`}
     if(s==="aguardando_aprovacao"){tit="Aguardando o diretor";ajuda="A T.I. só avança depois da aprovação."}
-    if(s==="aprovado"){tit="Diretor aprovou";txt="Observação (opcional)";btn=`<button class="btn primary" data-do="executar" type="button">Iniciar execução</button>`}
+    if(s==="aprovado"){tit="Diretor aprovou";txt="Observação (opcional, só T.I. e diretor veem)";btn=`<button class="btn primary" data-do="executar" type="button">Iniciar execução</button>`}
     if(s==="em_execucao"){tit="Execução em andamento";txt="O que foi realizado";ph="Descreva o que foi feito. Quem abriu o chamado verá este texto.";btn=`<button class="btn primary" data-do="concluir" type="button">Informar que foi realizado</button>`}
   }
-  if((p==="diretor"||p==="admin")&&s==="aguardando_aprovacao"){tit="Sua decisão";ajuda="";txt="Parecer";ph="Opcional para aprovar. Obrigatório para reprovar.";btn=`<button class="btn primary" data-do="aprovar" type="button">Aprovar</button><button class="btn danger" data-do="reprovar" type="button">Reprovar</button>`}
+  if((p==="diretor"||p==="admin")&&s==="aguardando_aprovacao"){tit="Sua decisão";ajuda="";pz="Prazo para execução (mantenha o da T.I. ou altere)";txt="Parecer (só T.I. e diretor veem)";ph="Opcional para aprovar. Obrigatório para reprovar.";btn=`<button class="btn primary" data-do="aprovar" type="button">Aprovar</button><button class="btn danger" data-do="reprovar" type="button">Reprovar</button>`}
   if(!tit)return"";
-  return`<div class="acao"><h3>${esc(tit)}</h3>${ajuda?`<p>${esc(ajuda)}</p>`:""}${txt?`<div class="field"><label for="a-texto">${esc(txt)}</label><textarea id="a-texto" maxlength="2000" style="min-height:70px" placeholder="${esc(ph)}"></textarea></div>`:""}${btn?`<div class="btns">${btn}</div>`:""}</div>`}
+  return`<div class="acao"><h3>${esc(tit)}</h3>${ajuda?`<p>${esc(ajuda)}</p>`:""}${pz?`<div class="field"><label for="a-prazo">${esc(pz)}</label><input id="a-prazo" type="date" value="${esc((S.prazos[t.id]||{}).prazo||"")}"></div>`:""}${txt?`<div class="field"><label for="a-texto">${esc(txt)}</label><textarea id="a-texto" maxlength="2000" style="min-height:70px" placeholder="${esc(ph)}"></textarea></div>`:""}${btn?`<div class="btns">${btn}</div>`:""}</div>`}
 function renderDet(){const id=S.openId;if(!id)return;const t=S.chamados.find(c=>c.id===id);if(!t){fecharDet();return}
   $("det-titulo").textContent=`${t.protocolo} · ${t.assunto}`;
   $("det-steps").innerHTML=passos(t,S.eventos);
@@ -492,7 +492,7 @@ function renderDet(){const id=S.openId;if(!id)return;const t=S.chamados.find(c=>
   <dl class="meta"><div><dt>Tipo</dt><dd>${esc(t.tipo)}</dd></div><div><dt>Centro de custo</dt><dd>${esc(t.centro_nome)}</dd></div><div><dt>Solicitante</dt><dd>${esc(t.solicitante_nome)}</dd></div><div><dt>Contato</dt><dd>${esc(t.contato)||"Não informado"}</dd></div><div><dt>Equipamento ou patrimônio</dt><dd>${esc(t.patrimonio)||"Não informado"}</dd></div><div><dt>Responsável</dt><dd>${esc(t.responsavel_nome)||"Sem responsável"}</dd></div></dl>`;
   $("det-anexos").innerHTML=S.anexos.length?S.anexos.map(a=>`<li><button class="proto" type="button" data-anexo="${esc(a.caminho)}" style="font-family:inherit;white-space:normal;overflow-wrap:anywhere;text-align:left">${esc(a.nome)}</button><small>${esc(fmtTam(a.tamanho))} · ${esc(a.por_nome)}</small></li>`).join(""):'<li class="muted">Nenhum arquivo anexado.</li>';
   $("det-enviar").hidden=FECHADOS.includes(t.status);renderPrazo(t);
-  $("det-tl").innerHTML=S.eventos.map(e=>`<li class="${e.tipo==="mensagem"?"msg":""}"><span class="when">${esc(fmtDH(e.em))} · ${esc(e.por_nome)} (${esc(PERFIL[e.por_perfil]||e.por_perfil)})</span><p><b style="font-weight:600">${esc(e.tipo==="mensagem"?"":e.titulo)}</b>${e.tipo!=="mensagem"&&e.texto?"\n":""}${esc(e.texto||"")}</p></li>`).join("");
+  $("det-tl").innerHTML=S.eventos.map(e=>`<li class="${e.tipo==="mensagem"?"msg":""}"><span class="when">${esc(fmtDH(e.em))} · ${esc(e.por_nome)} (${esc(PERFIL[e.por_perfil]||e.por_perfil)})</span><p><b style="font-weight:600">${esc(e.tipo==="mensagem"?"":e.titulo)}</b>${e.tipo!=="mensagem"&&(e.texto||S.notas[e.id])?"\n":""}${esc(e.texto||S.notas[e.id]||"")}${S.notas[e.id]?' <small class="muted">(só T.I. e diretor veem)</small>':""}</p></li>`).join("");
   const fechado=FECHADOS.includes(t.status),podeCancelar=!fechado&&t.status!=="em_execucao"&&(gereUsuarios()||t.solicitante_id===S.eu.id);
   $("det-cancelar").hidden=!podeCancelar;$("form-msg").hidden=fechado}
 function renderDados(){renderNav();renderPainel();renderLista();renderAut();renderUsuarios();renderDet()}
@@ -527,8 +527,8 @@ document.addEventListener("click",async e=>{
   if(e.target.closest("[data-sair]")){await sb.auth.signOut();S.chamados=[];await entrarNoSistema();return}
   const c=e.target.closest("[data-close]");if(c){const d=c.closest("dialog");if(d.id==="dlg-det")fecharDet();else d.close();return}
   const a=e.target.closest("[data-act]");if(a){abrirNovo();return}
-  const d=e.target.closest("[data-do]");if(d){const k=d.dataset.do,id=S.openId,x=$("a-texto")?$("a-texto").value:"";d.disabled=true;
-    const M={analise:["iniciar_analise",{p_id:id},"Análise iniciada."],pedir:["pedir_autorizacao",{p_id:id,p_justificativa:x},"Pedido enviado ao diretor."],direto:["seguir_sem_autorizacao",{p_id:id,p_texto:x},"Execução iniciada."],executar:["iniciar_execucao",{p_id:id,p_texto:x},"Execução iniciada."],concluir:["concluir_chamado",{p_id:id,p_texto:x},"Chamado marcado como realizado."],aprovar:["decidir_autorizacao",{p_id:id,p_aprovado:true,p_parecer:x},"Chamado aprovado."],reprovar:["decidir_autorizacao",{p_id:id,p_aprovado:false,p_parecer:x},"Chamado reprovado."]}[k];
+  const d=e.target.closest("[data-do]");if(d){const k=d.dataset.do,id=S.openId,x=$("a-texto")?$("a-texto").value:"",pz=$("a-prazo")?$("a-prazo").value:"";if(["pedir","direto","aprovar"].includes(k)&&!pz){toast("Informe o prazo para execução.");return}d.disabled=true;
+    const M={analise:["iniciar_analise",{p_id:id},"Análise iniciada."],pedir:["pedir_autorizacao",{p_id:id,p_justificativa:x,p_prazo:pz||null},"Pedido enviado ao diretor."],direto:["seguir_sem_autorizacao",{p_id:id,p_texto:x,p_prazo:pz||null},"Execução iniciada."],executar:["iniciar_execucao",{p_id:id,p_texto:x},"Execução iniciada."],concluir:["concluir_chamado",{p_id:id,p_texto:x},"Chamado marcado como realizado."],aprovar:["decidir_autorizacao",{p_id:id,p_aprovado:true,p_parecer:x,p_prazo:pz||null},"Chamado aprovado."],reprovar:["decidir_autorizacao",{p_id:id,p_aprovado:false,p_parecer:x,p_prazo:null},"Chamado reprovado."]}[k];
     await acao(...M);d.disabled=false;return}
   if(e.target.closest("[data-prazo]")){const dt=$("p-data").value,mt=$("p-motivo")?$("p-motivo").value:null;if(!dt){toast("Escolha a data do prazo.");return}await acao("definir_prazo",{p_id:S.openId,p_prazo:dt,p_motivo:mt},"Prazo salvo.");return}
   const an=e.target.closest("[data-anexo]");if(an){const w=window.open("about:blank");const {data,error}=await sb.storage.from("anexos").createSignedUrl(an.dataset.anexo,300);if(error){if(w)w.close();toast(traduz(error));return}if(w)w.location=data.signedUrl;else location.href=data.signedUrl;return}
