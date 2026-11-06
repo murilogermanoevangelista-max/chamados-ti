@@ -217,13 +217,13 @@ details summary{cursor:pointer;color:var(--muted)}
       </div></div>
       <p class="muted" id="contagem" style="margin:0 0 8px"></p><div id="lista"></div>
     </section>
-    <section id="v-usuarios" hidden><div class="top" style="margin-bottom:14px"><h1>Usuários</h1></div><p class="muted" style="margin:0 0 10px">Cadastre o e-mail e passe o código à pessoa. No primeiro acesso, ela cria a própria senha.</p>
+    <section id="v-usuarios" hidden><div class="top" style="margin-bottom:14px"><h1>Usuários</h1></div><p class="muted" style="margin:0 0 10px">Cadastre o e-mail e passe o código à pessoa. No primeiro acesso, ela cria a própria senha. Usuários e gerentes só acessam as obras marcadas.</p>
       <form class="card" id="form-usuario" style="margin-bottom:12px"><div class="filters">
         <div class="field"><label for="u-nome">Nome completo</label><input id="u-nome" required maxlength="120"></div>
         <div class="field"><label for="u-email">E-mail</label><input id="u-email" type="email" required></div>
         <div class="field"><label for="u-setor">Setor ou obra</label><input id="u-setor" maxlength="80"></div>
         <div class="field"><label for="u-perfil">Perfil</label><select id="u-perfil"><option value="solicitante">Funcionário</option><option value="gerente">Gerente de obra</option><option value="ti">T.I.</option></select></div>
-      </div><div class="btns" style="margin-top:10px"><button class="btn primary" type="submit">Cadastrar e gerar código</button></div></form>
+      </div><div class="field" id="u-obras-w" style="margin-top:10px"><span>Obras que esta pessoa pode acessar</span><div class="check-list" id="u-obras"></div></div><div class="btns" style="margin-top:10px"><button class="btn primary" type="submit">Cadastrar e gerar código</button></div></form>
       <div id="lista-convites"></div>
       <div class="card" id="lista-usuarios"></div>
       <h2 style="font-size:15px;font-weight:600;margin:18px 0 8px">Novo centro de custo</h2>
@@ -279,7 +279,7 @@ details summary{cursor:pointer;color:var(--muted)}
   <div class="dlg-body"><div class="btns"><button class="btn" type="button" id="av-todos">Marcar todos como lidos</button></div><div id="av-lista"></div></div>
 </dialog>
 <dialog id="dlg-centros" aria-labelledby="gc-titulo"><form id="form-gc">
-  <div class="dlg-head"><h2 id="gc-titulo">Centros de custo do gerente</h2><button class="x" type="button" data-close aria-label="Fechar">×</button></div>
+  <div class="dlg-head"><h2 id="gc-titulo">Obras que esta pessoa pode acessar</h2><button class="x" type="button" data-close aria-label="Fechar">×</button></div>
   <div class="dlg-body"><div class="check-list" id="gc-lista"></div><div class="dlg-foot"><button class="btn" type="button" data-close>Cancelar</button><button class="btn primary" type="submit">Salvar</button></div></div>
 </form></dialog>
 <div id="tip" hidden></div><div id="toast" role="status" hidden></div>
@@ -316,12 +316,11 @@ function renderPrazo(t){const box=$("det-prazo");if(!vePrazo()){box.innerHTML=""
   ${p?`<div class="btns" style="align-items:center"><b>${esc(fmtPrazo(p.prazo))}</b>${s?`<span class="pill ${s.c}">${esc(s.txt)}</span>`:""}</div>`:`<p style="margin:0">${fechado?"Nenhum prazo foi definido.":"Prazo ainda não definido."}</p>`}
   ${edita?`<div class="grid2"><div class="field"><label for="p-data">${p?"Novo prazo":"Data do prazo"}</label><input id="p-data" type="date" value="${esc(p?p.prazo:"")}"></div>${p?'<div class="field"><label for="p-motivo">Motivo da alteração</label><input id="p-motivo" maxlength="300"></div>':""}</div><div class="btns"><button class="btn primary" type="button" data-prazo>${p?"Alterar prazo":"Salvar prazo"}</button></div>`:""}
   ${h.length>1?`<details><summary>Alterações do prazo (${h.length-1})</summary><ul class="timeline" style="margin-top:8px">${h.slice(1).map(x=>`<li><span class="when">${esc(fmtDH(x.em))} · ${esc(x.por)}</span><p>${esc(fmtPrazo(x.de))} → ${esc(fmtPrazo(x.para))}${x.motivo?"\n"+esc(x.motivo):""}</p></li>`).join("")}</ul></details>`:""}</div>`}
-const NAVS={solicitante:[["chamados","Meus chamados"]],gerente:[["chamados","Chamados da obra"]],ti:[["autorizacoes","Pendentes"],["painel","Painel"],["chamados","Chamados"],["usuarios","Usuários"]],diretor:[["autorizacoes","Aprovar Chamados"],["painel","Painel"],["chamados","Chamados"]],admin:[["autorizacoes","Pendentes"],["painel","Painel"],["chamados","Chamados"],["usuarios","Usuários"]]};
+const NAVS={solicitante:[["chamados","Meus chamados"]],gerente:[["chamados","Chamados da obra"]],ti:[["autorizacoes","Pendentes"],["painel","Painel"],["chamados","Chamados"],["usuarios","Usuários"]],diretor:[["autorizacoes","Aprovar Chamados"],["painel","Painel"],["chamados","Chamados"]],admin:[["autorizacoes","Pendentes"],["aprovar","Aprovar Chamados"],["painel","Painel"],["chamados","Todos os chamados"],["meus","Meus chamados"],["usuarios","Usuários"]]};
 const ETAPAS_TI=["aberto","em_analise","aprovado","em_execucao"];
 function pendentes(){const p=S.eu&&S.eu.perfil,t=S.chamados;
   if(p==="diretor")return t.filter(c=>c.status==="aguardando_aprovacao");
-  if(p==="ti")return t.filter(c=>ETAPAS_TI.includes(c.status));
-  if(p==="admin")return t.filter(c=>c.status==="aguardando_aprovacao"||ETAPAS_TI.includes(c.status));
+  if(p==="ti"||p==="admin")return t.filter(c=>ETAPAS_TI.includes(c.status));
   return[]}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -395,8 +394,11 @@ async function carregar(){
   renderDados();
 }
 async function carregarCentros(){const {data,error}=await sb.from("centros_custo").select("*").eq("ativo",true).order("codigo");if(error){toast(traduz(error));return}S.centros=data||[];
-  $("n-centro").innerHTML='<option value="">Escolha</option>'+S.centros.map(c=>`<option value="${esc(c.id)}">${esc(c.codigo)} - ${esc(c.nome)}</option>`).join("");
-  const v=$("f-centro").value;$("f-centro").innerHTML='<option value="">Todos</option>'+S.centros.map(c=>`<option value="${esc(c.id)}">${esc(c.codigo)} - ${esc(c.nome)}</option>`).join("");$("f-centro").value=v}
+  const restrito=["solicitante","gerente"].includes(S.eu.perfil);S.centrosAbrir=S.centros;
+  if(restrito){const lib=await sb.from("gerente_centros").select("centro_id").eq("usuario_id",S.eu.id);const ok=new Set(lib.error?[]:(lib.data||[]).map(x=>x.centro_id));S.centrosAbrir=S.centros.filter(c=>ok.has(c.id))}
+  if(gereUsuarios()){const mar=new Set([...document.querySelectorAll("#u-obras input:checked")].map(i=>i.value));$("u-obras").innerHTML=S.centros.map(c=>`<label><input type="checkbox" value="${esc(c.id)}" ${mar.has(c.id)?"checked":""}><span>${esc(c.codigo)} - ${esc(c.nome)}</span></label>`).join("")}
+  $("n-centro").innerHTML='<option value="">Escolha</option>'+S.centrosAbrir.map(c=>`<option value="${esc(c.id)}">${esc(c.codigo)} - ${esc(c.nome)}</option>`).join("");
+  const v=$("f-centro").value;$("f-centro").innerHTML='<option value="">Todos</option>'+S.centrosAbrir.map(c=>`<option value="${esc(c.id)}">${esc(c.codigo)} - ${esc(c.nome)}</option>`).join("");$("f-centro").value=v}
 async function carregarUsuarios(){const [u,g,c]=await Promise.all([sb.from("usuarios").select("*").order("ativo").order("nome"),sb.from("gerente_centros").select("*"),sb.from("convites").select("email,nome,setor,perfil,expira_em,usado_em").order("nome")]);if(!u.error)S.usuarios=u.data||[];if(!g.error)S.gerCentros=g.data||[];
   if(!c.error){const tem=new Set(S.usuarios.map(x=>x.email.toLowerCase()));S.convites=(c.data||[]).filter(x=>!x.usado_em&&!tem.has(x.email))}}
 function mostrarCodigo(quem,cod){$("cod-quem").textContent=quem;$("cod-valor").textContent=cod;$("dlg-codigo").showModal()}
@@ -423,10 +425,10 @@ async function acao(nome,args,msg){
   if(msg)toast(msg);await carregar();await carregarEventos();return true}
 
 /* ---------- Telas ---------- */
-function renderNav(){const pend=pendentes().length;
-  $("nav").innerHTML=NAVS[S.eu.perfil].map(([v,n])=>`<button class="nav-btn" data-view="${v}" type="button" ${v===S.view?'aria-current="page"':""}>${esc(n)}${v==="autorizacoes"&&pend?`<span class="badge">${pend}</span>`:""}</button>`).join("");
+function renderNav(){const pend=pendentes().length,aAprovar=S.chamados.filter(c=>c.status==="aguardando_aprovacao").length;
+  $("nav").innerHTML=NAVS[S.eu.perfil].map(([v,n])=>`<button class="nav-btn" data-view="${v}" type="button" ${v===S.view?'aria-current="page"':""}>${esc(n)}${v==="autorizacoes"&&pend?`<span class="badge">${pend}</span>`:v==="aprovar"&&aAprovar?`<span class="badge">${aAprovar}</span>`:""}</button>`).join("");
   document.title=(pend?`(${pend}) `:"")+"Chamados de T.I."}
-function irPara(v){S.view=v;["painel","autorizacoes","chamados","usuarios"].forEach(x=>$("v-"+x).hidden=x!==v);renderNav()}
+function irPara(v){S.view=v;const sec={aprovar:"autorizacoes",meus:"autorizacoes"}[v]||v;["painel","autorizacoes","chamados","usuarios"].forEach(x=>$("v-"+x).hidden=x!==sec);renderNav();if(S.eu)renderAut()}
 function tabela(L){return`<div class="table-wrap"><table><thead><tr><th>Protocolo</th><th>Assunto</th><th>Tipo</th><th>Centro de custo</th><th>Solicitante</th><th>Responsável</th><th>Etapa</th><th>Prioridade</th><th>Aberto em</th>${vePrazo()?"<th>Prazo</th>":""}</tr></thead><tbody>
 ${L.map(t=>`<tr data-id="${esc(t.id)}"><td><button class="proto" type="button" data-open="${esc(t.id)}">${esc(t.protocolo)}</button></td><td><b style="font-weight:600">${esc(t.assunto)}</b></td><td>${esc(t.tipo)}</td><td>${esc(t.centro_nome)}</td><td>${esc(t.solicitante_nome)}</td><td>${t.responsavel_nome?esc(t.responsavel_nome):'<span class="muted">Sem responsável</span>'}</td><td>${pEtapa(t.status)}</td><td>${pPrio(t.prioridade)}</td><td class="nowrap">${esc(fmtD(t.criado_em))}</td>${vePrazo()?`<td class="nowrap">${S.prazos[t.id]?`${esc(fmtPrazo(S.prazos[t.id].prazo))}${situacaoPrazo(t)?`<br><span class="pill ${situacaoPrazo(t).c}">${esc(situacaoPrazo(t).txt)}</span>`:""}`:'<span class="muted">Sem prazo</span>'}</td>`:""}</tr>`).join("")}</tbody></table></div>`}
 function vazio(tit,txt,novo){return`<div class="card"><div class="empty"><b>${esc(tit)}</b><span>${esc(txt)}</span>${novo?'<button class="btn primary" type="button" data-act="novo">Abrir chamado</button>':""}</div></div>`}
@@ -450,7 +452,8 @@ function filtrados(){const de=$("f-de").value,ate=$("f-ate").value,st=$("f-statu
     if(b&&![t.protocolo,t.assunto,t.centro_nome,t.patrimonio,t.tipo,t.descricao].join(" ").toLowerCase().includes(b))return false;return true})}
 function renderLista(){const L=filtrados(),n=S.chamados.length;$("contagem").textContent=n?`${L.length} de ${n} chamado${n===1?"":"s"}`:"";
   $("lista").innerHTML=!n?vazio("Nenhum chamado por enquanto",S.eu.perfil==="solicitante"?"Abra um chamado e acompanhe aqui cada etapa.":"Os chamados abertos aparecem aqui.",true):L.length?tabela(L):vazio("Nenhum chamado com esses filtros","Mude ou limpe os filtros.")}
-function renderAut(){const dir=S.eu.perfil==="diretor",L=[...pendentes()].reverse();$("titulo-pend").textContent=dir?"Aprovar Chamados":"Chamados pendentes";
+function renderAut(){if(S.view==="meus"){const M=S.chamados.filter(c=>c.solicitante_id===S.eu.id);$("titulo-pend").textContent="Meus chamados";$("lista-aut").innerHTML=M.length?tabela(M):vazio("Você ainda não abriu chamados","Os chamados que você abrir aparecem aqui.",true);return}
+  const dir=S.eu.perfil==="diretor"||S.view==="aprovar",L=[...(S.view==="aprovar"?S.chamados.filter(c=>c.status==="aguardando_aprovacao"):pendentes())].reverse();$("titulo-pend").textContent=dir?"Aprovar Chamados":"Chamados pendentes";
   $("lista-aut").innerHTML=L.length?tabela(L):vazio(dir?"Nenhum chamado para aprovar":"Nenhum chamado pendente",dir?"Quando a T.I. pedir sua aprovação, o chamado aparece aqui.":"Os chamados que ainda precisam de ação aparecem aqui, do mais antigo para o mais novo.")}
 function renderUsuarios(){if(!gereUsuarios())return;const souAdm=S.eu.perfil==="admin";
   const cv=S.convites||[];$("lista-convites").innerHTML=cv.length?`<div class="card" style="margin-bottom:12px"><h2>Aguardando o primeiro acesso</h2>${cv.map(c=>`<div class="user-row"><div style="min-width:0"><b style="font-weight:600">${esc(c.nome)}</b><br><small class="muted" style="overflow-wrap:anywhere">${esc(c.email)}</small></div><div>${new Date(c.expira_em)<new Date()?'<span class="pill c-red">Código vencido</span>':`<span class="pill c-amber">Vale até ${esc(fmtD(c.expira_em))}</span>`}</div><span class="muted">${esc(PERFIL[c.perfil]||c.perfil)}</span>${c.perfil==="admin"||(c.perfil==="diretor"&&!souAdm)?"<span></span>":`<button class="btn" type="button" data-cod="${esc(c.email)}" data-quem="${esc(c.nome)}">Gerar novo código</button>`}</div>`).join("")}</div>`:"";
@@ -458,7 +461,7 @@ function renderUsuarios(){if(!gereUsuarios())return;const souAdm=S.eu.perfil==="
     return`<div class="user-row" data-user="${esc(u.id)}"><div style="min-width:0"><b style="font-weight:600">${esc(u.nome)}</b><br><small class="muted" style="overflow-wrap:anywhere">${esc(u.email)}${u.setor?" · "+esc(u.setor):""}</small></div>
     <div>${u.ativo?'<span class="pill c-green">Liberado</span>':'<span class="pill c-amber">Aguardando liberação</span>'}</div>
     ${dir?`<span class="muted">${esc(PERFIL[u.perfil])}</span>`:`<select aria-label="Perfil de ${esc(u.nome)}" data-perfil ${eu?"disabled":""}><option value="solicitante" ${u.perfil==="solicitante"?"selected":""}>Funcionário</option><option value="gerente" ${u.perfil==="gerente"?"selected":""}>Gerente de obra</option><option value="ti" ${u.perfil==="ti"?"selected":""}>T.I.</option>${souAdm?`<option value="diretor" ${u.perfil==="diretor"?"selected":""}>Diretor</option>`:""}${u.perfil==="admin"?'<option value="admin" selected>Administrador</option>':""}</select>`}
-    ${dir||eu?"<span></span>":`<div class="btns">${u.perfil==="gerente"?`<button class="btn" type="button" data-gc>Centros de custo (${S.gerCentros.filter(g=>g.usuario_id===u.id).length})</button>`:""}<button class="btn" type="button" data-cod="${esc(u.email)}" data-quem="${esc(u.nome)}">Código de senha</button><button class="btn" type="button" data-ativar="${u.ativo?"0":"1"}">${u.ativo?"Bloquear":"Liberar"}</button></div>`}</div>`}).join("")||'<p class="muted">Nenhum usuário.</p>'}
+    ${dir||eu?"<span></span>":`<div class="btns">${["gerente","solicitante"].includes(u.perfil)?`<button class="btn" type="button" data-gc>Obras (${S.gerCentros.filter(g=>g.usuario_id===u.id).length})</button>`:""}<button class="btn" type="button" data-cod="${esc(u.email)}" data-quem="${esc(u.nome)}">Código de senha</button><button class="btn" type="button" data-ativar="${u.ativo?"0":"1"}">${u.ativo?"Bloquear":"Liberar"}</button></div>`}</div>`}).join("")||'<p class="muted">Nenhum usuário.</p>'}
 
 function passos(t,evs){
   const quando=s=>{const e=evs.find(x=>x.para_status===s);return e?fmtD(e.em):""};
@@ -501,7 +504,7 @@ async function abrirDet(id){S.openId=id;S.eventos=[];S.anexos=[];$("det-acao").d
 function fecharDet(){S.openId=null;if($("dlg-det").open)$("dlg-det").close()}
 
 /* ---------- Eventos ---------- */
-function abrirNovo(){$("form-novo").reset();$("n-prio").value="Média";ajudaNovo();$("dlg-novo").showModal();$("n-assunto").focus()}
+async function abrirNovo(){$("form-novo").reset();await carregarCentros();if(!S.centrosAbrir.length){toast("Nenhuma obra foi liberada para você. Fale com a T.I.");return}$("n-prio").value="Média";ajudaNovo();$("dlg-novo").showModal();$("n-assunto").focus()}
 function ajudaNovo(){$("n-prio-ajuda").textContent=AJUDA_PRIO[$("n-prio").value]||"";$("n-desc").placeholder=DICA[$("n-tipo").value]||"Explique o que está acontecendo ou o que você precisa."}
 $("btn-novo-side").onclick=abrirNovo;
 $("form-novo").addEventListener("submit",async ev=>{ev.preventDefault();
@@ -515,9 +518,12 @@ $("d-arquivos").addEventListener("change",async e=>{const fs=[...e.target.files]
   e.target.disabled=true;const ok=await enviarArquivos(S.openId,fs);e.target.disabled=false;e.target.value="";if(ok)toast(ok===1?"Arquivo enviado.":`${ok} arquivos enviados.`);await carregarEventos()});
 $("btn-avisos").onclick=()=>{renderAvisos();$("dlg-avisos").showModal()};
 $("av-todos").onclick=async()=>{await sb.rpc("marcar_avisos_lidos",{p_chamado:null});await carregarAvisos()};
-$("form-usuario").addEventListener("submit",async ev=>{ev.preventDefault();const nome=$("u-nome").value.trim();
-  const {data,error}=await sb.rpc("cadastrar_usuario",{p_email:$("u-email").value,p_nome:nome,p_setor:$("u-setor").value,p_perfil:$("u-perfil").value});
-  if(error){toast(traduz(error));return}$("form-usuario").reset();mostrarCodigo(nome,data);await carregar()});
+const ajustaObras=()=>{$("u-obras-w").hidden=!["solicitante","gerente"].includes($("u-perfil").value)};
+$("u-perfil").addEventListener("change",ajustaObras);
+$("form-usuario").addEventListener("submit",async ev=>{ev.preventDefault();const nome=$("u-nome").value.trim(),per=$("u-perfil").value,obras=[...document.querySelectorAll("#u-obras input:checked")].map(i=>i.value);
+  if(["solicitante","gerente"].includes(per)&&!obras.length){toast("Escolha pelo menos uma obra.");return}
+  const {data,error}=await sb.rpc("cadastrar_usuario",{p_email:$("u-email").value,p_nome:nome,p_setor:$("u-setor").value,p_perfil:per,p_centros:obras});
+  if(error){toast(traduz(error));return}$("form-usuario").reset();ajustaObras();mostrarCodigo(nome,data);await carregar()});
 $("cod-copiar").onclick=async()=>{try{await navigator.clipboard.writeText($("cod-valor").textContent);toast("Código copiado.")}catch(e){toast("Selecione e copie o código manualmente.")}};
 $("form-centro").addEventListener("submit",async ev=>{ev.preventDefault();if(await acao("adicionar_centro",{p_codigo:$("cc-codigo").value,p_nome:$("cc-nome").value},"Centro de custo adicionado.")){$("form-centro").reset();await carregarCentros()}});
 $("form-gc").addEventListener("submit",async ev=>{ev.preventDefault();const ids=[...document.querySelectorAll("#gc-lista input:checked")].map(i=>i.value);$("dlg-centros").close();await acao("definir_centros_gerente",{p_id:S.gcUser,p_centros:ids},"Centros de custo salvos.")});
