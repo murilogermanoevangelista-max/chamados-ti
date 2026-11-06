@@ -240,7 +240,7 @@ dialog{border-radius:14px}
 
 <div class="app" id="tela-app" hidden>
   <aside class="side">
-    <div class="brand"><b>GTEL</b><span>Chamados</span><small>Central de T.I. · versão 06/11/2026-d</small></div>
+    <div class="brand"><b>GTEL</b><span>Chamados</span><small>Central de T.I. · versão 06/11/2026-e</small></div>
     <button class="side-new" id="btn-novo-side" type="button">+ Abrir chamado</button>
     <nav aria-label="Principal" id="nav"></nav>
     <button class="nav-btn" id="btn-avisos" type="button">Avisos<span class="badge" id="avisos-qtd" hidden></span></button>
@@ -319,7 +319,8 @@ dialog{border-radius:14px}
   <div class="dlg-head"><h2 id="cod-titulo">Código de acesso</h2><button class="x" type="button" data-close aria-label="Fechar">×</button></div>
   <div class="dlg-body"><p style="margin:0">Passe este código a <b id="cod-quem"></b>. Ele vale por 14 dias, funciona uma vez e não será mostrado de novo.</p>
     <div class="desc" id="cod-valor" style="font:500 24px var(--mono);text-align:center;letter-spacing:2px"></div>
-    <div class="dlg-foot"><button class="btn" type="button" id="cod-copiar">Copiar código</button><button class="btn primary" type="button" data-close>Concluído</button></div></div>
+    <div class="field"><label for="cod-msg">Mensagem pronta para enviar</label><textarea id="cod-msg" readonly style="min-height:210px"></textarea></div>
+    <div class="dlg-foot" style="flex-wrap:wrap"><button class="btn primary" type="button" id="cod-copiar">Copiar mensagem</button><a class="btn" id="cod-whats" target="_blank" rel="noopener" style="text-decoration:none">Enviar por WhatsApp</a><a class="btn" id="cod-mail" style="text-decoration:none">Enviar por e-mail</a><button class="btn" type="button" data-close>Concluído</button></div></div>
 </dialog>
 <dialog id="dlg-avisos" aria-labelledby="av-titulo">
   <div class="dlg-head"><h2 id="av-titulo">Avisos</h2><button class="x" type="button" data-close aria-label="Fechar">×</button></div>
@@ -457,8 +458,13 @@ async function carregarCentros(){const {data,error}=await sb.from("centros_custo
   const v=$("f-centro").value;$("f-centro").innerHTML='<option value="">Todos</option>'+S.centrosAbrir.map(c=>`<option value="${esc(c.id)}">${esc(c.codigo)} - ${esc(c.nome)}</option>`).join("");$("f-centro").value=v}
 async function carregarUsuarios(){const [u,g,c]=await Promise.all([sb.from("usuarios").select("*").order("ativo").order("nome"),sb.from("gerente_centros").select("*"),sb.from("convites").select("email,nome,setor,perfil,expira_em,usado_em").order("nome")]);if(!u.error)S.usuarios=u.data||[];if(!g.error)S.gerCentros=g.data||[];
   if(!c.error){const tem=new Set(S.usuarios.map(x=>x.email.toLowerCase()));S.convites=(c.data||[]).filter(x=>!x.usado_em&&!tem.has(x.email))}}
-function mostrarCodigo(quem,cod){$("cod-quem").textContent=quem;$("cod-valor").textContent=cod;$("dlg-codigo").showModal()}
-async function gerarCodigo(email,quem){const {data,error}=await sb.rpc("gerar_codigo",{p_email:email});if(error){toast(traduz(error));return}mostrarCodigo(quem,data);await carregar()}
+function mostrarCodigo(quem,cod,email){const tem=S.usuarios.some(u=>u.email.toLowerCase()===String(email).toLowerCase()),link=location.origin+"/",nome=String(quem).trim().split(/\s+/)[0];
+  const msg=tem?`Olá, ${nome}!\n\nSegue o código para criar uma nova senha no sistema Chamados de T.I. da GTEL.\n\nLink: ${link}\nE-mail: ${email}\nCódigo: ${cod}\n\nComo fazer:\n1. Abra o link e clique em "Esqueci minha senha".\n2. Informe seu e-mail e o código.\n3. Crie a nova senha, com pelo menos 8 caracteres.\n\nO código funciona uma vez e vale por 14 dias. Não compartilhe.`:`Olá, ${nome}!\n\nSeu acesso ao sistema Chamados de T.I. da GTEL está pronto.\n\nLink: ${link}\nE-mail: ${email}\nCódigo de primeiro acesso: ${cod}\n\nComo entrar:\n1. Abra o link e clique em "Primeiro acesso".\n2. Informe seu e-mail e o código.\n3. Crie sua senha, com pelo menos 8 caracteres.\n\nDepois, é só entrar com seu e-mail e senha. O código funciona uma vez e vale por 14 dias. Não compartilhe.`;
+  $("cod-quem").textContent=quem;$("cod-valor").textContent=cod;$("cod-msg").value=msg;
+  $("cod-whats").href="https://wa.me/?text="+encodeURIComponent(msg);
+  $("cod-mail").href=`mailto:${encodeURIComponent(email).replace("%40","@")}?subject=${encodeURIComponent("Acesso ao sistema Chamados de T.I.")}&body=${encodeURIComponent(msg)}`;
+  $("dlg-codigo").showModal()}
+async function gerarCodigo(email,quem){const {data,error}=await sb.rpc("gerar_codigo",{p_email:email});if(error){toast(traduz(error));return}mostrarCodigo(quem,data,email);await carregar()}
 async function carregarAvisos(){const {data,error}=await sb.from("notificacoes").select("*").eq("usuario_id",S.eu.id).order("em",{ascending:false}).limit(50);if(error)return;S.avisos=data||[];renderAvisos()}
 async function carregarEventos(){if(!S.openId)return;const id=S.openId;const [e,a]=await Promise.all([sb.from("chamado_eventos").select("*").eq("chamado_id",id).order("em"),sb.from("chamado_anexos").select("*").eq("chamado_id",id).order("em")]);if(id!==S.openId)return;if(!e.error)S.eventos=e.data||[];if(!a.error)S.anexos=a.data||[];S.notas={};if(vePrazo()){const nt=await sb.from("chamado_notas").select("*").eq("chamado_id",id);if(id!==S.openId)return;if(!nt.error)S.notas=Object.fromEntries((nt.data||[]).map(x=>[x.evento_id,x.texto]))}renderDet()}
 let rtT;function aoMudar(){clearTimeout(rtT);rtT=setTimeout(async()=>{await carregar();await carregarEventos()},300)}
@@ -579,8 +585,8 @@ $("u-perfil").addEventListener("change",ajustaObras);
 $("form-usuario").addEventListener("submit",async ev=>{ev.preventDefault();const nome=$("u-nome").value.trim(),per=$("u-perfil").value,obras=[...document.querySelectorAll("#u-obras input:checked")].map(i=>i.value);
   if(["solicitante","gerente"].includes(per)&&!obras.length){toast("Escolha pelo menos uma obra.");return}
   const {data,error}=await sb.rpc("cadastrar_usuario",{p_email:$("u-email").value,p_nome:nome,p_setor:$("u-setor").value,p_perfil:per,p_centros:obras});
-  if(error){toast(traduz(error));return}$("form-usuario").reset();ajustaObras();mostrarCodigo(nome,data);await carregar()});
-$("cod-copiar").onclick=async()=>{try{await navigator.clipboard.writeText($("cod-valor").textContent);toast("Código copiado.")}catch(e){toast("Selecione e copie o código manualmente.")}};
+  if(error){toast(traduz(error));return}const emailNovo=$("u-email").value.trim();$("form-usuario").reset();ajustaObras();mostrarCodigo(nome,data,emailNovo);await carregar()});
+$("cod-copiar").onclick=async()=>{try{await navigator.clipboard.writeText($("cod-msg").value);toast("Mensagem copiada.")}catch(e){$("cod-msg").select();toast("Aperte Ctrl + C para copiar a mensagem.")}};
 $("form-centro").addEventListener("submit",async ev=>{ev.preventDefault();if(await acao("adicionar_centro",{p_codigo:$("cc-codigo").value,p_nome:$("cc-nome").value},"Centro de custo adicionado.")){$("form-centro").reset();await carregarCentros()}});
 $("form-gc").addEventListener("submit",async ev=>{ev.preventDefault();const ids=[...document.querySelectorAll("#gc-lista input:checked")].map(i=>i.value);$("dlg-centros").close();await acao("definir_centros_gerente",{p_id:S.gcUser,p_centros:ids},"Centros de custo salvos.")});
 $("form-msg").addEventListener("submit",async ev=>{ev.preventDefault();if(await acao("comentar_chamado",{p_id:S.openId,p_texto:$("m-texto").value},null))$("m-texto").value=""});
